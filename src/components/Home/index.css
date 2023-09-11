@@ -1,0 +1,53 @@
+
+.chatHistoryInterface{
+    height: 50rem;
+    /* width: 33%; */
+    margin-top: 1rem;
+    border: 2px solid grey;
+    border-radius: 25px;
+    overflow-y: scroll;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    /* justify-content: flex-end; */
+}
+
+.chatHistoryInterface .fix{
+    flex: 1 1 auto;
+}
+
+.chatSection-assistance{
+    height:5rem;
+    top: 50%;
+    /* margin-top: auto !important; */
+}
+
+.chatSection-assistance-contractOp{
+    margin-top: 1rem;
+    margin-bottom: 1rem;
+    width:fit-content;
+    margin-left: 1.5rem;
+    top: 50%;
+}
+
+.userInterface{
+    text-align: right;
+}
+
+.chat-text-modifier{
+    border: 2px solid grey;
+    border-radius: 25px;
+}
+
+.inputClass{
+    /* position: relative; */
+}
+.chatHistory{
+    /* position: relative; */
+}
+
+/* .mainDiv{
+    background-color: aqua;
+    position: relative;
+} */
+
