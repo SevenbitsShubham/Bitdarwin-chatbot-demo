@@ -1,6 +1,6 @@
 
 .chatHistoryInterface{
-    height: 50rem;
+    height: 45rem;
     /* width: 33%; */
     margin-top: 1rem;
     border: 2px solid grey;
@@ -20,6 +20,11 @@
     height:5rem;
     top: 50%;
     /* margin-top: auto !important; */
+}
+
+.plotSection{
+    height:17rem;
+    /* top: 50%; */
 }
 
 .chatSection-assistance-contractOp{

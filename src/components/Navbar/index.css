@@ -1,0 +1,11 @@
+
+.addressClass{
+    color: aliceblue;
+     /* background: white; */
+     /* padding: 0.3rem; */
+     /* border-radius: 5%;    */
+}
+
+.pointerCursor:hover{
+    cursor: pointer;
+}

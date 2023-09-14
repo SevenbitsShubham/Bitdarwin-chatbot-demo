@@ -2,14 +2,18 @@ import React,{useState,useEffect,useRef} from 'react'
 import { Button } from 'bootstrap';
 import Form from 'react-bootstrap/Form';
 import { OpenAI } from "langchain/llms/openai";
-import { ChatOpenAI } from "langchain/chat_models/openai";
+import { MultiPromptChain } from "langchain/chains";
+import { OpenAIChat } from "langchain/llms/openai";
 import { ConversationChain,LLMChain } from "langchain/chains";
 import { PromptTemplate } from 'langchain/prompts'; 
 import {BufferMemory} from 'langchain/memory';
 import {Chroma} from "langchain/vectorstores/chroma"
 import {OpenAIEmbeddings} from "langchain/embeddings/openai"
-import {StructuredOutputParser,OutputFixingParser} from "langchain/output_parsers";
-import './index.css'
+import {StructuredOutputParser} from "langchain/output_parsers";
+import './index.css';
+import Api from '../../utils/Api';
+import { ethers } from "ethers";
+import { useWeb3React } from '@web3-react/core'
 import table from '../../utils/marketMakers.json'
 
 
@@ -18,28 +22,94 @@ export default function Home(){
     const [userInput,setUserInput] = useState('')
     const [chats,setChats] = useState([])
     const [promptManageMode,setPromptManageMode] = useState(true)
-    const [questions,setQuestions] = useState(["Provide the time period of prediction in months.","Provide the prediction price of Bitcoin.","How much quantity of Bitcoin you are having?","How much contracts you want to create?"])
+    const [questions,setQuestions] = useState(["Provide the time period of prediction in months.","Do you need assistance in price prediction?","Provide the prediction price of Bitcoin.","How much quantity of Bitcoin you are having?","How much contracts you want to create?"])
     const [promptFormatterCount,setPromptFormatterCount] = useState(0)
     const [contractCreationPropmptInputs,setPromptInputs] = useState([])
     const [loading,setLoading] = useState(false)
+    const [provider,setProvider] = useState()
+    const [sqlQuery,setSqlQuery] = useState('')
+    const [signature,setSignature] = useState()
+    const [contractParams,setcontractParams] = useState({strikePrice:null,premium:null,openInterest:null,expirationDate:null})
     const inputRef = useRef()
+
+    const {active,account,chainId,library} = useWeb3React()
 
     let memory = new BufferMemory({inputKey:'predictionMonths',memoryKey:'contractHistory'})
     let chain
     let vectorStore
 
     useEffect(()=>{
-        console.log("tableLog",table)
+        // console.log("tableLog",table)
+        // testMultiPromptChain()
         let potentialQueries= generateSqlQueries(table)
-        console.log("log5.5",potentialQueries)
+        // console.log("log5.5",potentialQueries)
         // manageVectorSTorage(potentialQueries)
         setChats([{text:questions[0],role:'assistant',property:''}])   
-        
     },[])
 
     useEffect(()=>{
         
     },[loading])
+
+    useEffect(()=>{
+        if(library){
+            setProvider(new ethers.BrowserProvider(library._provider))
+        }
+    },[active])
+
+//     const testMultiPromptChain = async() =>{
+//         try{
+// const llm = new OpenAIChat({openAIApiKey:process.env.REACT_APP_OPENAI_API_KEY});
+// const promptNames = ["physics", "math", "history"];
+// const promptDescriptions = [
+//   "Good for answering questions about physics",
+//   "Good for answering math questions",
+//   "Good for answering questions about history",
+// ];
+// const physicsTemplate = `You are a Market Maker contract Bot. Please get the ansers of the question in numbers if not ask user to give correct answer:
+
+// Here is a question:
+// {input}
+// `;
+// const mathTemplate = `You are a Market Maker contract Bot. Please get the ansers of the question in numbers if not ask user to give correct answer:
+
+// Here is a question:
+// {input}`;
+
+// const historyTemplate = `You are a Market Maker contract Bot. Please get the ansers of the question in numbers if not ask user to give correct answer:
+
+// Here is a question:
+// {input}`;
+
+// const promptTemplates = [physicsTemplate, mathTemplate, historyTemplate];
+
+// const multiPromptChain = MultiPromptChain.fromLLMAndPrompts(llm, {
+//   promptNames,
+//   promptDescriptions,
+//   promptTemplates,
+// });
+
+// const testPromise1 = multiPromptChain.call({
+//   input: "What is the speed of light?",
+// });
+
+// const testPromise2 = multiPromptChain.call({
+//   input: "What is the derivative of x^2?",
+// });
+
+// const testPromise3 = multiPromptChain.call({
+//   input: "Who was the first president of the United States?",
+// });
+
+// const [{ text: result1 }, { text: result2 }, { text: result3 }] =
+//   await Promise.all([testPromise1, testPromise2, testPromise3]);
+
+// console.log(result1, result2, result3);
+//         }
+//         catch(error){
+//             console.log(error)
+//         }
+//     }
 
     const manageVectorSTorage = async (queries) =>{
         vectorStore = await Chroma.fromDocuments( 
@@ -60,7 +130,7 @@ export default function Home(){
         let queries=[]
         let columns= Object.keys(tableData[0])
         let sampleValues = Object.keys(tableData[0])
-        console.log("log",columns)
+        // console.log("log",columns)
 
         //select queries
         queries.push( {pageContent:`SELECT * FROM MarketMakerContract;`, metadata: {type: "select",}})
@@ -69,7 +139,7 @@ export default function Home(){
         }
 
         queries.push({pageContent:`INSERT INTO MarketMakerContract VALUES (${sampleValues});`,metadata: {type: "insert",}})
-        console.log("log",queries)
+        // console.log("log",queries)
         return queries 
     }
 
@@ -79,26 +149,45 @@ export default function Home(){
         temperature: 0.6,
         modelName: "gpt-3.5-turbo",
         openAIApiKey:process.env.REACT_APP_OPENAI_API_KEY
-    });    
-    
-    // const llm = new ChatOpenAI({
-    //     modelName: "gpt-3.5-turbo",
-    //     temperature: 0.5,
-    //     openAIApiKey:process.env.REACT_APP_OPENAI_API_KEY
-    // })
+    });  
 
-    const handleUserInput = ()=>{
+    const handlePricePrediction = async() =>{
+        try{
+        setLoading(true)    
+        let result= await Api.get('/prediction/btcPrice')
+        setLoading(false)
+        console.log("log8",result)
+        return result.data.url
+        }
+        catch(error){
+            console.log("error",error)
+        }    
+    }  
+
+    const handleUserInput = async()=>{
         //  setChats(()=>[...chats,{text:userInput,role:'user'} ] )
 
           console.log("log",promptManageMode,promptFormatterCount,contractCreationPropmptInputs)  
          if(promptManageMode){
+            if(promptFormatterCount === 1){
+                   if(userInput.toLocaleLowerCase() === 'yes'){
+                      let plotUrl= await handlePricePrediction()
+                      console.log("log7",plotUrl)
+                      setChats(()=>[...chats,{text:userInput,role:'user',property:''},{text:plotUrl,role:'assistant',property:'plot' },{text:questions[promptFormatterCount+1],role:'assistant',property:'' } ])  
+                   }else{
+                    setChats(()=>[...chats,{text:userInput,role:'user',property:''},{text:questions[promptFormatterCount+1],role:'assistant',property:'' } ])  
+                   }
+                   setPromptFormatterCount(promptFormatterCount+1)
+            }
+            else{
                 setChats(()=>[...chats,{text:userInput,role:'user',property:''},{text:questions[promptFormatterCount+1],role:'assistant',property:'' }])  
                 setPromptFormatterCount(promptFormatterCount+1)
                 setPromptInputs(()=>[...contractCreationPropmptInputs,userInput])
                 if(promptFormatterCount+1 === questions.length-1){
                     setPromptManageMode(false)
                     setPromptInputs(()=>[...contractCreationPropmptInputs,userInput])
-                }
+                }   
+            }
          } 
          else{
             setPromptManageMode(false)
@@ -194,12 +283,13 @@ export default function Home(){
             chain = new LLMChain({llm,prompt:reqPrompt})
          let matching_result = await chromaInstance.similaritySearch("Create a sql query for adding entry to MarketMakerContract Table for column and their values as: strikePrice=45000 premium=400 openInterest=16 expirationDate=10/02/2023",1)
            let result = await chain.call({'strikePrice':`${strikePrice}`,'premium':`${premium}`,'openInterest':`${openInterest}`,'expirationDate':`${expirationDate}`},{input_documents:matching_result})
-            console.log("log5",result,matching_result)
+            // console.log("log5",result,matching_result)
             let formattedResult = JSON.parse(result.text)
-            
+            setSqlQuery(formattedResult.query)
             let tempChats = chats
             tempChats.push({text:`${formattedResult.query}`,role:'assistant',property:'sqlQuery'})
             setChats(tempChats)
+            setcontractParams({strikePrice,premium,openInterest,expirationDate})
             setLoading(false)
         }
         catch(error){
@@ -208,11 +298,41 @@ export default function Home(){
     }
 
     const handleCreateContract = async(query) =>{
+        try{
         console.log("queryLog",query)
+        let sqlQueryHex=  Buffer.from(sqlQuery, 'utf-8').toString('hex')
+        let signer = await provider.getSigner(account) 
+        let message = {query:sqlQuery,hex:sqlQueryHex}
+        let reqSignature = await signer.signMessage(JSON.stringify(message)) 
+        setSignature(reqSignature)
+        console.log("lobraryLog",signer,reqSignature)
+        let payload = {
+            walletAddress:account,
+            strikePrice:contractParams.strikePrice,
+            premium:contractParams.premium,
+            openInterest:contractParams.openInterest,
+            expirationDate:contractParams.expirationDate,
+            query:sqlQuery,
+            hex:sqlQueryHex,
+            signature:reqSignature
+        }
+        await Api.post('/moneyMaker/createContract',payload)
+        setcontractParams({strikePrice:null,premium:null,openInterest:null,expirationDate:null})
+        setSignature(null)
+        setSqlQuery(null)
+        }
+        catch(error){
+            console.log("error",error)
+        }
     }
 
     return(
+        <>
         <div className='container'>
+            {
+                !active &&
+                  <h4 className='text-center text-danger mt-2'>Please Connect your wallet!</h4>
+            }
             <div className='offset-3 mainDiv'>
                 <div className='col-8 chatHistory'>
                      <div className='chatHistoryInterface'>
@@ -221,8 +341,9 @@ export default function Home(){
                            chats.map((chat,i)=>{
                             return(
                                 chat.role === 'assistant'?
-                                    chat.property === "contract" || chat.property === "sqlQuery" ?                                        
-                                                chat.property === "contract" ?
+                                    // chat.property === "contract" || chat.property === "sqlQuery" ?                                        
+                                                
+                                                chat.property === "contract" ? 
                                                     <div className='chatSection-assistance-contractOp ' key={i}>
                                                         <div className=' chat-text-modifier p-4'> 
                                                             <span className=' p-2'>Strike Price :{chat.text.split(',')[0]}</span> <br/>
@@ -233,16 +354,26 @@ export default function Home(){
                                                         </div>
                                                     </div>
                                                 :
-                                                <div className='chatSection-assistance-contractOp ' key={i}>
-                                                    <div className=' chat-text-modifier p-4'>     
-                                                            <span className=' p-2'>SQL Query : <span className='font-weight-bold'>{chat.text}</span> </span><br/>
-                                                            <button className='btn btn-primary btn-sm mt-1' onClick={()=>handleCreateContract(chat.text)}>Create Contract</button>
-                                                    </div>
-                                                </div>    
-                                            :
-                                            <div className='chatSection-assistance' key={i}>
-                                                <p className='p-4'> <span className='chat-text-modifier p-2'>{chat.text}</span> </p>
-                                            </div>
+                                                    chat.property === "sqlQuery" ?
+                                                    <div className='chatSection-assistance-contractOp ' key={i}>
+                                                        <div className=' chat-text-modifier p-4'>     
+                                                                <span className=' p-2'>SQL Query : <span className='font-weight-bold'>{chat.text}</span> </span><br/>
+                                                                <button className='btn btn-primary btn-sm mt-1' onClick={()=>handleCreateContract(chat.text)}>Create Contract</button>
+                                                        </div>
+                                                    </div>    
+                                                    :
+                                                    
+                                                        chat.property === "plot" ?
+                                                            <div className='plotSection' key={i}>
+                                                                <p >
+                                                                    <img src={chat.text} alt='' height={280}/>
+                                                                    {/* <span className='chat-text-modifier p-2'>{chat.text}</span>  */}
+                                                                </p>
+                                                            </div>
+                                                        :
+                                                            <div className='chatSection-assistance' key={i}>
+                                                                <p className='p-4'> <span className='chat-text-modifier p-2'>{chat.text}</span> </p>
+                                                            </div>
                                 :
                                     <div className='chatSection-assistance ' key={i}>
                                         <p className='p-4 userInterface'> <span className='chat-text-modifier p-2 justify-content-right'>{chat.text}</span> </p>
@@ -261,14 +392,15 @@ export default function Home(){
                 </div>    
                 <div className='row mt-4 inputClass'>    
                     <div className='col-8'>
-                        <Form.Control size="lg" type="text" placeholder="Welcome ! Type here..." onChange={(e)=>setUserInput(e.target.value)}  ref={inputRef}/>   
+                        <Form.Control size="lg" type="text" disabled={!active} placeholder="Welcome ! Type here..." onChange={(e)=>setUserInput(e.target.value)}  ref={inputRef}/>   
                     </div>   
                     <div className='col-3'>
                         {/* <Button variant="primary">Enter</Button> */}
-                        <button className='btn btn-primary' onClick={handleUserInput}>Enter</button>
+                        <button className='btn btn-primary' onClick={handleUserInput} disabled={!active}>Enter</button>
                     </div>
                 </div>
             </div>
         </div>
+        </>
     )
 }
