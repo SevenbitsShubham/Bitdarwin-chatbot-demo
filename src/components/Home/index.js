@@ -2,11 +2,9 @@ import React,{useState,useEffect,useRef} from 'react'
 import { Button } from 'bootstrap';
 import Form from 'react-bootstrap/Form';
 import { OpenAI } from "langchain/llms/openai";
-import { MultiPromptChain } from "langchain/chains";
-import { OpenAIChat } from "langchain/llms/openai";
 import { ConversationChain,LLMChain } from "langchain/chains";
 import { PromptTemplate } from 'langchain/prompts'; 
-import {BufferMemory} from 'langchain/memory';
+import {BufferMemory,ConversationBufferMemory} from 'langchain/memory';
 import {Chroma} from "langchain/vectorstores/chroma"
 import {OpenAIEmbeddings} from "langchain/embeddings/openai"
 import {StructuredOutputParser} from "langchain/output_parsers";
@@ -21,7 +19,7 @@ import table from '../../utils/marketMakers.json'
 export default function Home(){
     const [userInput,setUserInput] = useState('')
     const [chats,setChats] = useState([])
-    const [promptManageMode,setPromptManageMode] = useState(true)
+    const [promptManageMode,setPromptManageMode] = useState(false)
     const [questions,setQuestions] = useState(["Provide the time period of prediction in months.","Do you need assistance in price prediction?","Provide the prediction price of Bitcoin.","How much quantity of Bitcoin you are having?","How much contracts you want to create?"])
     const [promptFormatterCount,setPromptFormatterCount] = useState(0)
     const [contractCreationPropmptInputs,setPromptInputs] = useState([])
@@ -29,22 +27,27 @@ export default function Home(){
     const [provider,setProvider] = useState()
     const [sqlQuery,setSqlQuery] = useState('')
     const [signature,setSignature] = useState()
+    const [initPhase,setInitphase] = useState(false)
+    const [messageCount,setmessageCount] = useState(0)
     const [contractParams,setcontractParams] = useState({strikePrice:null,premium:null,openInterest:null,expirationDate:null})
     const inputRef = useRef()
+    let convoChain 
 
     const {active,account,chainId,library} = useWeb3React()
 
     let memory = new BufferMemory({inputKey:'predictionMonths',memoryKey:'contractHistory'})
+    let memeory1 = new BufferMemory()
     let chain
     let vectorStore
 
     useEffect(()=>{
         // console.log("tableLog",table)
-        // testMultiPromptChain()
+        setupInitConvoChain()
+        //  testUsingChromaMemory()
         let potentialQueries= generateSqlQueries(table)
         // console.log("log5.5",potentialQueries)
         // manageVectorSTorage(potentialQueries)
-        setChats([{text:questions[0],role:'assistant',property:''}])   
+        setChats([{text:"Hii",role:'assistant',property:''}])   
     },[])
 
     useEffect(()=>{
@@ -57,59 +60,16 @@ export default function Home(){
         }
     },[active])
 
-//     const testMultiPromptChain = async() =>{
-//         try{
-// const llm = new OpenAIChat({openAIApiKey:process.env.REACT_APP_OPENAI_API_KEY});
-// const promptNames = ["physics", "math", "history"];
-// const promptDescriptions = [
-//   "Good for answering questions about physics",
-//   "Good for answering math questions",
-//   "Good for answering questions about history",
-// ];
-// const physicsTemplate = `You are a Market Maker contract Bot. Please get the ansers of the question in numbers if not ask user to give correct answer:
-
-// Here is a question:
-// {input}
-// `;
-// const mathTemplate = `You are a Market Maker contract Bot. Please get the ansers of the question in numbers if not ask user to give correct answer:
-
-// Here is a question:
-// {input}`;
-
-// const historyTemplate = `You are a Market Maker contract Bot. Please get the ansers of the question in numbers if not ask user to give correct answer:
-
-// Here is a question:
-// {input}`;
-
-// const promptTemplates = [physicsTemplate, mathTemplate, historyTemplate];
-
-// const multiPromptChain = MultiPromptChain.fromLLMAndPrompts(llm, {
-//   promptNames,
-//   promptDescriptions,
-//   promptTemplates,
-// });
-
-// const testPromise1 = multiPromptChain.call({
-//   input: "What is the speed of light?",
-// });
-
-// const testPromise2 = multiPromptChain.call({
-//   input: "What is the derivative of x^2?",
-// });
-
-// const testPromise3 = multiPromptChain.call({
-//   input: "Who was the first president of the United States?",
-// });
-
-// const [{ text: result1 }, { text: result2 }, { text: result3 }] =
-//   await Promise.all([testPromise1, testPromise2, testPromise3]);
-
-// console.log(result1, result2, result3);
-//         }
-//         catch(error){
-//             console.log(error)
-//         }
-//     }
+    //setups Conversation chain with the buffer memory for initial conversation
+    const setupInitConvoChain = async() =>{
+        setInitphase(true)
+        //if user wants to create a money maker contract first ask below questions simultanieosly: 1.To create the contract options provide the time period of prediction in months. 2.Do you need assistance in price prediction? 3.Provide the prediction price. 4.How much quantity of assets you are having? 5.How much contracts you want to create?
+        let template = "You are a Crypto moneymaker contract creator bot, greet the user in a friendly manner.  Human:Hii  AI bot:Hii, Welcome to Money Maker Bot, Do you want to create the contract.  Human:yes,I want to create the contract. AI bot:Please provide valid answers to below questions. Human:{input} AI Bot:"   
+        let reqPrompt = PromptTemplate.fromTemplate(template)
+        convoChain = new ConversationChain({llm,prompt:reqPrompt,memeory:memeory1})
+        // let initconvoChain = await convoChain.call({input:"Hi"})
+        
+    }
 
     const manageVectorSTorage = async (queries) =>{
         vectorStore = await Chroma.fromDocuments( 
@@ -126,11 +86,34 @@ export default function Home(){
 
     }
 
+    // const testUsingChromaMemory = async() =>{
+    //     let doc =[
+    //             {
+    //               pageContent: `Bot: Hii`,
+    //               metadata: {
+    //                 speaker: "Bot",
+    //               },
+    //             },
+    //             {
+    //               pageContent: "Human: Welcome to Market maker chatbot. Do you want to create market maker contract?",
+    //               metadata: {
+    //                 speaker: "Human",
+    //               },
+    //             },
+    //             {
+    //                 pageContent: "Human: Welcome to Market maker chatbot. Do you want to create market maker contract?",
+    //                 metadata: {
+    //                   speaker: "Human",
+    //                 },
+    //               },
+    //     ]
+    // }
+
+    //generates sql queries from a json data for storing it in chroma db
     const generateSqlQueries = (tableData) =>{
         let queries=[]
         let columns= Object.keys(tableData[0])
         let sampleValues = Object.keys(tableData[0])
-        // console.log("log",columns)
 
         //select queries
         queries.push( {pageContent:`SELECT * FROM MarketMakerContract;`, metadata: {type: "select",}})
@@ -139,10 +122,10 @@ export default function Home(){
         }
 
         queries.push({pageContent:`INSERT INTO MarketMakerContract VALUES (${sampleValues});`,metadata: {type: "insert",}})
-        // console.log("log",queries)
         return queries 
     }
 
+    //initializing llm instance
     const llm = new OpenAI({
         // organization: "org-cRDHZiDZZml2OhFTMeIqHr6c",
         // apiKey: ,
@@ -162,11 +145,24 @@ export default function Home(){
         catch(error){
             console.log("error",error)
         }    
-    }  
+    } 
+    
+    const handleInitChat = async(input) =>{
+        try{
+            let template = "You are a Crypto moneymaker contract creator bot, greet the user in a friendly manner.  Human:Hii  AI bot:Hello! Welcome to Money Maker Bot. I'm here to help you create your contract. Please provide valid answers to the questions below.  Human:yes,I want to create the contract. AI bot:Please provide valid answers to below questions. Human:{input} AI Bot:"   
+        let reqPrompt = PromptTemplate.fromTemplate(template)
+        convoChain = new ConversationChain({llm,prompt:reqPrompt,memeory:memeory1})
+            return await convoChain.call({input})
+        }
+        catch(error){
+
+        }
+    }
 
     const handleUserInput = async()=>{
         //  setChats(()=>[...chats,{text:userInput,role:'user'} ] )
-
+        console.log("debug1")
+        setmessageCount(messageCount+1)
           console.log("log",promptManageMode,promptFormatterCount,contractCreationPropmptInputs)  
          if(promptManageMode){
             if(promptFormatterCount === 1){
@@ -175,7 +171,7 @@ export default function Home(){
                       console.log("log7",plotUrl)
                       setChats(()=>[...chats,{text:userInput,role:'user',property:''},{text:plotUrl,role:'assistant',property:'plot' },{text:questions[promptFormatterCount+1],role:'assistant',property:'' } ])  
                    }else{
-                    setChats(()=>[...chats,{text:userInput,role:'user',property:''},{text:questions[promptFormatterCount+1],role:'assistant',property:'' } ])  
+                    setChats(()=>[...chats,{text:userInput,role:'user',property:''} ,{text:questions[promptFormatterCount+1],role:'assistant',property:'' } ])  
                    }
                    setPromptFormatterCount(promptFormatterCount+1)
             }
@@ -189,6 +185,13 @@ export default function Home(){
                 }   
             }
          } 
+         else if(initPhase){
+            // setChats(()=>[...chats,{text:userInput,role:'user',property:''} ])
+            let result = await handleInitChat(userInput)
+            console.log("log7.5",result)
+            setChats(()=>[...chats,{text:userInput,role:'user',property:''},{text:result.response,role:'assistant',property:'' } ])
+            // console.log("log8",messageCount)
+         }
          else{
             setPromptManageMode(false)
             let reqPromptInputs = [...contractCreationPropmptInputs,userInput]
