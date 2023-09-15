@@ -331,7 +331,7 @@ export default function Home(){
 
     return(
         <>
-        <div className='container'>
+        <div className='container py-5'>
             {
                 !active &&
                   <h4 className='text-center text-danger mt-2'>Please Connect your wallet!</h4>
@@ -375,7 +375,7 @@ export default function Home(){
                                                             </div>
                                                         :
                                                             <div className='chatSection-assistance' key={i}>
-                                                                <p className='p-4'> <span className='chat-text-modifier p-2'>{chat.text}</span> </p>
+                                                                <div className=' chat-text-modifier-cover'> <div className='chat-text-modifier'>{chat.text}</div> </div>
                                                             </div>
                                 :
                                     <div className='chatSection-assistance ' key={i}>
@@ -393,7 +393,7 @@ export default function Home(){
                         }
                      </div>   
                 </div>    
-                <div className='row mt-4 inputClass'>    
+                <div className='row mt-4 inputClass align-items-center'>    
                     <div className='col-8'>
                         <Form.Control size="lg" type="text" disabled={!active} placeholder="Welcome ! Type here..." onChange={(e)=>setUserInput(e.target.value)}  ref={inputRef}/>   
                     </div>   
