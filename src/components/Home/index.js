@@ -19,7 +19,7 @@ import table from '../../utils/marketMakers.json'
 export default function Home(){
     const [userInput,setUserInput] = useState('')
     const [chats,setChats] = useState([])
-    const [promptManageMode,setPromptManageMode] = useState(false)
+    const [promptManageMode,setPromptManageMode] = useState(true)
     const [questions,setQuestions] = useState(["Provide the time period of prediction in months.","Do you need assistance in price prediction?","Provide the prediction price of Bitcoin.","How much quantity of Bitcoin you are having?","How much contracts you want to create?"])
     const [promptFormatterCount,setPromptFormatterCount] = useState(0)
     const [contractCreationPropmptInputs,setPromptInputs] = useState([])
@@ -42,12 +42,12 @@ export default function Home(){
 
     useEffect(()=>{
         // console.log("tableLog",table)
-        setupInitConvoChain()
+        // setupInitConvoChain()
         //  testUsingChromaMemory()
         let potentialQueries= generateSqlQueries(table)
         // console.log("log5.5",potentialQueries)
         // manageVectorSTorage(potentialQueries)
-        setChats([{text:"Hii",role:'assistant',property:''}])   
+        setChats([{text:questions[0],role:'assistant',property:''}])   
     },[])
 
     useEffect(()=>{
@@ -185,13 +185,13 @@ export default function Home(){
                 }   
             }
          } 
-         else if(initPhase){
-            // setChats(()=>[...chats,{text:userInput,role:'user',property:''} ])
-            let result = await handleInitChat(userInput)
-            console.log("log7.5",result)
-            setChats(()=>[...chats,{text:userInput,role:'user',property:''},{text:result.response,role:'assistant',property:'' } ])
-            // console.log("log8",messageCount)
-         }
+        //  else if(initPhase){
+        //     // setChats(()=>[...chats,{text:userInput,role:'user',property:''} ])
+        //     let result = await handleInitChat(userInput)
+        //     console.log("log7.5",result)
+        //     setChats(()=>[...chats,{text:userInput,role:'user',property:''},{text:result.response,role:'assistant',property:'' } ])
+        //     // console.log("log8",messageCount)
+        //  }
          else{
             setPromptManageMode(false)
             let reqPromptInputs = [...contractCreationPropmptInputs,userInput]
