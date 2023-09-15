@@ -162,28 +162,12 @@ export default function Home(){
     const handleUserInput = async()=>{
         //  setChats(()=>[...chats,{text:userInput,role:'user'} ] )
         console.log("debug1")
+        inputRef.current.value=''
+        setChats(()=>[...chats,{text:userInput,role:'user',property:''}])
         setmessageCount(messageCount+1)
           console.log("log",promptManageMode,promptFormatterCount,contractCreationPropmptInputs)  
          if(promptManageMode){
-            if(promptFormatterCount === 1){
-                   if(userInput.toLocaleLowerCase() === 'yes'){
-                      let plotUrl= await handlePricePrediction()
-                      console.log("log7",plotUrl)
-                      setChats(()=>[...chats,{text:userInput,role:'user',property:''},{text:plotUrl,role:'assistant',property:'plot' },{text:questions[promptFormatterCount+1],role:'assistant',property:'' } ])  
-                   }else{
-                    setChats(()=>[...chats,{text:userInput,role:'user',property:''} ,{text:questions[promptFormatterCount+1],role:'assistant',property:'' } ])  
-                   }
-                   setPromptFormatterCount(promptFormatterCount+1)
-            }
-            else{
-                setChats(()=>[...chats,{text:userInput,role:'user',property:''},{text:questions[promptFormatterCount+1],role:'assistant',property:'' }])  
-                setPromptFormatterCount(promptFormatterCount+1)
-                setPromptInputs(()=>[...contractCreationPropmptInputs,userInput])
-                if(promptFormatterCount+1 === questions.length-1){
-                    setPromptManageMode(false)
-                    setPromptInputs(()=>[...contractCreationPropmptInputs,userInput])
-                }   
-            }
+
          } 
          else if(initPhase){
             // setChats(()=>[...chats,{text:userInput,role:'user',property:''} ])
@@ -191,6 +175,12 @@ export default function Home(){
             console.log("log7.5",result)
             setChats(()=>[...chats,{text:userInput,role:'user',property:''},{text:result.response,role:'assistant',property:'' } ])
             // console.log("log8",messageCount)
+            if(messageCount === 0){
+                setInitphase(false)
+                setChats([{text:questions[promptFormatterCount],role:'assistant',property:''}])   
+
+                handleContractQuestions()
+            }
          }
          else{
             setPromptManageMode(false)
@@ -199,7 +189,30 @@ export default function Home(){
             handleChat(reqPromptInputs)
          }
 
-         inputRef.current.value=''
+         
+    }
+
+    //function appends required question for contract creation in chat
+    const handleContractQuestions = async() =>{
+        if(promptFormatterCount === 1){
+            if(userInput.toLocaleLowerCase() === 'yes'){
+               let plotUrl= await handlePricePrediction()
+               console.log("log7",plotUrl)
+               setChats(()=>[...chats,{text:userInput,role:'user',property:''},{text:plotUrl,role:'assistant',property:'plot' },{text:questions[promptFormatterCount+1],role:'assistant',property:'' } ])  
+            }else{
+             setChats(()=>[...chats,{text:userInput,role:'user',property:''} ,{text:questions[promptFormatterCount+1],role:'assistant',property:'' } ])  
+            }
+            setPromptFormatterCount(promptFormatterCount+1)
+        }
+        else{
+            setChats(()=>[...chats,{text:userInput,role:'user',property:''},{text:questions[promptFormatterCount+1],role:'assistant',property:'' }])  
+            setPromptFormatterCount(promptFormatterCount+1)
+            setPromptInputs(()=>[...contractCreationPropmptInputs,userInput])
+            if(promptFormatterCount+1 === questions.length-1){
+                setPromptManageMode(false)
+                setPromptInputs(()=>[...contractCreationPropmptInputs,userInput])
+            }   
+        }
     }
 
     const handleChat = async(promtInputs) =>{
@@ -374,8 +387,8 @@ export default function Home(){
                                                                 </p>
                                                             </div>
                                                         :
-                                                            <div className='chatSection-assistance' key={i}>
-                                                                <p className='p-4'> <span className='chat-text-modifier p-2'>{chat.text}</span> </p>
+                                                            <div className='chatSection-assistance bg-warning col-8 ' key={i}>
+                                                                <div className='p-4 chat-text-modifier'> {chat.text}</div>
                                                             </div>
                                 :
                                     <div className='chatSection-assistance ' key={i}>
@@ -395,11 +408,13 @@ export default function Home(){
                 </div>    
                 <div className='row mt-4 inputClass'>    
                     <div className='col-8'>
-                        <Form.Control size="lg" type="text" disabled={!active} placeholder="Welcome ! Type here..." onChange={(e)=>setUserInput(e.target.value)}  ref={inputRef}/>   
+                        {/* <Form.Control size="lg" type="text" disabled={!active} placeholder="Welcome ! Type here..." onChange={(e)=>setUserInput(e.target.value)}  ref={inputRef}/>    */}
+                        <Form.Control size="lg" type="text" placeholder="Welcome ! Type here..." onChange={(e)=>setUserInput(e.target.value)}  ref={inputRef}/>   
                     </div>   
                     <div className='col-3'>
                         {/* <Button variant="primary">Enter</Button> */}
-                        <button className='btn btn-primary' onClick={handleUserInput} disabled={!active}>Enter</button>
+                        {/* <button className='btn btn-primary' onClick={handleUserInput} disabled={!active}>Enter</button> */}
+                        <button className='btn btn-primary' onClick={handleUserInput} >Enter</button>
                     </div>
                 </div>
             </div>
