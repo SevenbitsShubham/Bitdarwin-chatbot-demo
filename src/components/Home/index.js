@@ -20,6 +20,7 @@ export default function Home(){
     const [userInput,setUserInput] = useState('')
     const [chats,setChats] = useState([])
     const [promptManageMode,setPromptManageMode] = useState(false)
+    const [contractMode,setContractMode] = useState(false)
     const [questions,setQuestions] = useState(["Provide the time period of prediction in months.","Do you need assistance in price prediction?","Provide the prediction price of Bitcoin.","How much quantity of Bitcoin you are having?","How much contracts you want to create?"])
     const [promptFormatterCount,setPromptFormatterCount] = useState(0)
     const [contractCreationPropmptInputs,setPromptInputs] = useState([])
@@ -162,57 +163,63 @@ export default function Home(){
     const handleUserInput = async()=>{
         //  setChats(()=>[...chats,{text:userInput,role:'user'} ] )
         console.log("debug1")
+        setLoading(true)
         inputRef.current.value=''
-        setChats(()=>[...chats,{text:userInput,role:'user',property:''}])
+        let tempChats = [...chats,{text:userInput,role:'user',property:''}]        
+        setChats(tempChats)
         setmessageCount(messageCount+1)
           console.log("log",promptManageMode,promptFormatterCount,contractCreationPropmptInputs)  
          if(promptManageMode){
 
+            if(promptFormatterCount === 1){
+                if(userInput.toLocaleLowerCase() === 'yes'){
+                   let plotUrl= await handlePricePrediction()
+                   console.log("log7",plotUrl)
+                   tempChats= [...tempChats,{text:plotUrl,role:'assistant',property:'plot' },{text:questions[promptFormatterCount+1],role:'assistant',property:'' }]
+                   setChats(tempChats)  
+                }else{
+                   tempChats= [...tempChats,{text:questions[promptFormatterCount+1],role:'assistant',property:'' } ]
+                   setChats(tempChats)  
+                }
+                setPromptFormatterCount(promptFormatterCount+1)
+            }
+            else{
+                tempChats= [...tempChats,{text:questions[promptFormatterCount+1],role:'assistant',property:'' } ]
+                setChats(tempChats)  
+                setPromptFormatterCount(promptFormatterCount+1)
+                setPromptInputs(()=>[...contractCreationPropmptInputs,userInput])
+                if(promptFormatterCount+1 === questions.length-1){
+                    setPromptManageMode(false)
+                    setPromptInputs(()=>[...contractCreationPropmptInputs,userInput])
+                }   
+            }
+
          } 
          else if(initPhase){
-            // setChats(()=>[...chats,{text:userInput,role:'user',property:''} ])
             let result = await handleInitChat(userInput)
             console.log("log7.5",result)
-            setChats(()=>[...chats,{text:userInput,role:'user',property:''},{text:result.response,role:'assistant',property:'' } ])
-            // console.log("log8",messageCount)
+            tempChats.push({text:result.response,role:'assistant',property:'' })
+            setChats(tempChats)
             if(messageCount === 0){
+                tempChats.push({text:questions[promptFormatterCount],role:'assistant',property:''})
+                setChats(tempChats)   
                 setInitphase(false)
-                setChats([{text:questions[promptFormatterCount],role:'assistant',property:''}])   
-
-                handleContractQuestions()
+                setPromptManageMode(true)
             }
          }
          else{
             setPromptManageMode(false)
             let reqPromptInputs = [...contractCreationPropmptInputs,userInput]
-            setChats(()=>[...chats,{text:userInput,role:'user'} ] )
+            setContractMode(true)
             handleChat(reqPromptInputs)
          }
 
-         
+         setLoading(false)
     }
 
     //function appends required question for contract creation in chat
     const handleContractQuestions = async() =>{
-        if(promptFormatterCount === 1){
-            if(userInput.toLocaleLowerCase() === 'yes'){
-               let plotUrl= await handlePricePrediction()
-               console.log("log7",plotUrl)
-               setChats(()=>[...chats,{text:userInput,role:'user',property:''},{text:plotUrl,role:'assistant',property:'plot' },{text:questions[promptFormatterCount+1],role:'assistant',property:'' } ])  
-            }else{
-             setChats(()=>[...chats,{text:userInput,role:'user',property:''} ,{text:questions[promptFormatterCount+1],role:'assistant',property:'' } ])  
-            }
-            setPromptFormatterCount(promptFormatterCount+1)
-        }
-        else{
-            setChats(()=>[...chats,{text:userInput,role:'user',property:''},{text:questions[promptFormatterCount+1],role:'assistant',property:'' }])  
-            setPromptFormatterCount(promptFormatterCount+1)
-            setPromptInputs(()=>[...contractCreationPropmptInputs,userInput])
-            if(promptFormatterCount+1 === questions.length-1){
-                setPromptManageMode(false)
-                setPromptInputs(()=>[...contractCreationPropmptInputs,userInput])
-            }   
-        }
+        
     }
 
     const handleChat = async(promtInputs) =>{
@@ -336,6 +343,7 @@ export default function Home(){
         setcontractParams({strikePrice:null,premium:null,openInterest:null,expirationDate:null})
         setSignature(null)
         setSqlQuery(null)
+        setContractMode(false)
         }
         catch(error){
             console.log("error",error)
@@ -414,7 +422,7 @@ export default function Home(){
                     <div className='col-3'>
                         {/* <Button variant="primary">Enter</Button> */}
                         {/* <button className='btn btn-primary' onClick={handleUserInput} disabled={!active}>Enter</button> */}
-                        <button className='btn btn-primary' onClick={handleUserInput} >Enter</button>
+                        <button className='btn btn-primary' onClick={()=>!loading?handleUserInput():''} disabled={contractMode} >Enter</button>
                     </div>
                 </div>
             </div>

@@ -10,10 +10,16 @@ import Navbar from 'react-bootstrap/Navbar';
 export default function NavbarComponent(){
     const {active,account,deactivate,library,chainId} = useWeb3React()
     const [showModal,setShowModal] = useState(false)
+    const [buyerMode,setBuyerMode] = useState(false)
+
     // const ethers = require("ethers") 
 
     useEffect(()=>{
-   
+        const currentRoute = window.location.pathname;
+        console.log("currentRouter",currentRoute)
+        if(currentRoute === '/buyer'){
+            setBuyerMode(true)
+        }
     },[active])
 
     return(
@@ -22,17 +28,31 @@ export default function NavbarComponent(){
             <Container>
                 {/* <Navbar.Brand href="#home">Navbar with text</Navbar.Brand> */}
                 <Navbar.Toggle />
-                <Navbar.Collapse className="justify-content-end">
+                
                 {
-                    active ?
+                    buyerMode && active ?
                         <>
-                            <span className='addressClass'>{formatAddress(account)} <button className='btn btn-danger ml-2' onClick={()=>deactivate()}>Disconnect</button></span>
-                            
+                            <Navbar.Collapse className="justify-content-start">
+                                <Navbar.Text className='text-white'>
+                                    Marketplace
+                                </Navbar.Text>
+                            </Navbar.Collapse>
                         </>
-                            :
-                        <button className='btn btn-primary' onClick={()=>setShowModal(true)}>Connect Wallet</button>
+                        :
+                        null
                 }
-                </Navbar.Collapse>
+                    <Navbar.Collapse className="justify-content-end"> 
+                    {
+                        active ?
+                            <>
+                                <span className='addressClass'>{formatAddress(account)} <button className='btn btn-danger ml-2' onClick={()=>deactivate()}>Disconnect</button></span>
+                                
+                            </>
+                                :
+                            <button className='btn btn-primary' onClick={()=>setShowModal(true)}>Connect Wallet</button>
+                    }
+                    </Navbar.Collapse>        
+                
             </Container>
             <WalletConnectionModal show={showModal} onHide={()=>setShowModal(false)} />
         </Navbar>
