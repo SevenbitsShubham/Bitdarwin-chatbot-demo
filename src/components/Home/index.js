@@ -21,6 +21,7 @@ export default function Home(){
     const [chats,setChats] = useState([])
     const [promptManageMode,setPromptManageMode] = useState(false)
     const [contractMode,setContractMode] = useState(false)
+    const [postContractMode,setPostContractMode] = useState(false)
     const [questions,setQuestions] = useState(["Provide the time period of prediction in months.","Do you need assistance in price prediction?","Provide the prediction price of Bitcoin.","How much quantity of Bitcoin you are having?","How much contracts you want to create?"])
     const [promptFormatterCount,setPromptFormatterCount] = useState(0)
     const [contractCreationPropmptInputs,setPromptInputs] = useState([])
@@ -208,10 +209,18 @@ export default function Home(){
             }
          }
          else{
-            setPromptManageMode(false)
-            let reqPromptInputs = [...contractCreationPropmptInputs,userInput]
-            setContractMode(true)
-            handleChat(reqPromptInputs)
+            //handles conversation after contract creation process
+            if(postContractMode){
+                let result = await handleInitChat(userInput)
+                console.log("log7.5",result)
+               tempChats.push({text:result.response,role:'assistant',property:'' })
+            }
+            else{
+                setPromptManageMode(false)
+                let reqPromptInputs = [...contractCreationPropmptInputs,userInput]
+                setContractMode(true)
+                handleChat(reqPromptInputs)
+            }
          }
 
          setLoading(false)
@@ -344,6 +353,9 @@ export default function Home(){
         setSignature(null)
         setSqlQuery(null)
         setContractMode(false)
+        let tempChats = [...chats,{text:"Contract creation is in progress, Thanks!!",role:'assistant',property:''}]        
+        setChats(tempChats)     
+        setPostContractMode(true)  
         }
         catch(error){
             console.log("error",error)
