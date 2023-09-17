@@ -44,12 +44,12 @@ export default function Home(){
 
     useEffect(()=>{
         // console.log("tableLog",table)
-        setupInitConvoChain()
+        // setupInitConvoChain()
         //  testUsingChromaMemory()
         let potentialQueries= generateSqlQueries(table)
         // console.log("log5.5",potentialQueries)
         // manageVectorSTorage(potentialQueries)
-        setChats([{text:"Hii",role:'assistant',property:''}])   
+        setChats([{text:questions[0],role:'assistant',property:''}])   
     },[])
 
     useEffect(()=>{
@@ -364,7 +364,7 @@ export default function Home(){
 
     return(
         <>
-        <div className='container'>
+        <div className='container py-5'>
             {
                 !active &&
                   <h4 className='text-center text-danger mt-2'>Please Connect your wallet!</h4>
@@ -407,8 +407,8 @@ export default function Home(){
                                                                 </p>
                                                             </div>
                                                         :
-                                                            <div className='chatSection-assistance bg-warning col-8 ' key={i}>
-                                                                <div className='p-4 chat-text-modifier'> {chat.text}</div>
+                                                            <div className='chatSection-assistance' key={i}>
+                                                                <div className=' chat-text-modifier-cover'> <div className='chat-text-modifier'>{chat.text}</div> </div>
                                                             </div>
                                 :
                                     <div className='chatSection-assistance ' key={i}>
@@ -426,7 +426,7 @@ export default function Home(){
                         }
                      </div>   
                 </div>    
-                <div className='row mt-4 inputClass'>    
+                <div className='row mt-4 inputClass align-items-center'>    
                     <div className='col-8'>
                         {/* <Form.Control size="lg" type="text" disabled={!active} placeholder="Welcome ! Type here..." onChange={(e)=>setUserInput(e.target.value)}  ref={inputRef}/>    */}
                         <Form.Control size="lg" type="text" placeholder="Welcome ! Type here..." onChange={(e)=>setUserInput(e.target.value)}  ref={inputRef}/>   
