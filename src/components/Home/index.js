@@ -44,12 +44,13 @@ export default function Home(){
 
     useEffect(()=>{
         // console.log("tableLog",table)
-        // setupInitConvoChain()
+        setupInitConvoChain()
         //  testUsingChromaMemory()
         let potentialQueries= generateSqlQueries(table)
         // console.log("log5.5",potentialQueries)
         // manageVectorSTorage(potentialQueries)
-        setChats([{text:questions[0],role:'assistant',property:''}])   
+        setChats([{text:"Hii",role:'assistant',property:''}]) 
+        // handleChat1()
     },[])
 
     useEffect(()=>{
@@ -247,23 +248,23 @@ export default function Home(){
 
         let formatInstructions = parser.getFormatInstructions()
 
-        let mainQuery = `Answer the user's question as best you can:\n{format_instructions}\n If bitcoin price is $10000 , the prediction for bitcoin price in the next {predictionMonths} months to hit $ {predictionPrice} . Please generate call option data for me strike , premium , open int, expiration date so I can create contracts.Also generate {contractCounts} contracts data for this scenario and think about me as the money maker and I have {userBalance} Bitcoins in total.`        
+        // let mainQuery = `Answer the user's question as best you can:\n{format_instructions}\n If bitcoin price is $10000 , the prediction for bitcoin price in the next {predictionMonths} months to hit $ {predictionPrice} . Please generate call option data for me strike , premium , open int, expiration date so I can create contracts.Also generate {contractCounts} contracts data for this scenario and think about me as the money maker and I have {userBalance} Bitcoins in total.`        
+        let mainQuery = `Answer the user's question as best you can:\n{format_instructions}\n If bitcoin price is $10000 , the prediction for bitcoin price in the next {predictionMonths} months from today:{todayDate} to hit $ {predictionPrice} . Please generate call option data for me strike , premium , open int, expiration date so I can create contracts.Also generate {contractCounts} contracts data for this scenario and think about me as the money maker and I have {userBalance} Bitcoins in total.`        
 
 
     //prompt initialization    
     let reqPrompt = new PromptTemplate({
         template:mainQuery,
-        inputVariables:["predictionMonths","predictionPrice","contractCounts","userBalance"],
+        inputVariables:["predictionMonths","todayDate","predictionPrice","contractCounts","userBalance"],
         partialVariables:{format_instructions:formatInstructions}
        })
 
     chain = new LLMChain({llm,prompt:reqPrompt,memory})
     //    chain = new LLMChain({llm,prompt:reqPrompt,outputKey: "records",outputParser: outputFixingParser})
-
     //    console.log("log2",chain)
     //    let result = await chain.call({input:formattedPrompt})
 
-       let result = await chain.call({'predictionMonths':`${promtInputs[0]}`,'predictionPrice':`${promtInputs[1]}`,'contractCounts':`${promtInputs[3]}`,'userBalance':`${promtInputs[2]}`})
+       let result = await chain.call({'predictionMonths':`${promtInputs[0]}`,'todayDate':formatDateToDdMmYy(),'predictionPrice':`${promtInputs[1]}`,'contractCounts':`${promtInputs[3]}`,'userBalance':`${promtInputs[2]}`})
     //    console.log("result",result)
        let finalResult = JSON.parse(result.text)
        console.log(JSON.parse(result.text))
@@ -276,6 +277,61 @@ export default function Home(){
         setLoading(false)
        }
     }
+
+    function formatDateToDdMmYy() {
+        const today = new Date();
+        const day = String(today.getDate()).padStart(2, '0'); // Get day and pad with leading zero if needed
+        const month = String(today.getMonth() + 1).padStart(2, '0'); // Get month (0-11) and add 1, then pad with leading zero if needed
+        const year = String(today.getFullYear()).slice(-2); // Get the last two digits of the year
+      
+        return `${year}-${month}-${day}`;
+      }
+      
+
+    // const handleChat1 = async(promtInputs) =>{
+    //     try{
+    //      setLoading(true)
+    //      let parser = StructuredOutputParser.fromNamesAndDescriptions({
+    //          description:"Gives context of the answer",
+    //          contracts:[{
+    //              strikePrice:"strikePrice in the each contract answer",
+    //              premium:"premium in the each contract answer",
+    //              openInterest:"openInterest in the each contract answer",
+    //              expirationDate:"expirationDate in the each contract answer"
+    //          }
+    //          ]
+    //      })
+ 
+    //      let formatInstructions = parser.getFormatInstructions()
+ 
+    //      let mainQuery = `Answer the user's question as best you can:\n{format_instructions}\n If bitcoin price is $10000 , the prediction for bitcoin price in the next {predictionMonths} months from today:{todayDate} to hit $ {predictionPrice} . Please generate call option data for me strike , premium , open int, expiration date so I can create contracts.Also generate {contractCounts} contracts data for this scenario and think about me as the money maker and I have {userBalance} Bitcoins in total.`        
+ 
+ 
+    //  //prompt initialization    
+    //  let reqPrompt = new PromptTemplate({
+    //      template:mainQuery,
+    //      inputVariables:["predictionMonths","todayDate", "predictionPrice","contractCounts","userBalance"],
+    //      partialVariables:{format_instructions:formatInstructions}
+    //     })
+ 
+    //  chain = new LLMChain({llm,prompt:reqPrompt,memory})
+    //  //    chain = new LLMChain({llm,prompt:reqPrompt,outputKey: "records",outputParser: outputFixingParser})
+    //  //    console.log("log2",chain)
+    //  //    let result = await chain.call({input:formattedPrompt})
+ 
+    //     let result = await chain.call({'predictionMonths':`3`,'todayDate':formatDateToDdMmYy(),'predictionPrice':`40000`,'contractCounts':`5`,'userBalance':`10`})
+    //  //    console.log("result",result)
+    //     let finalResult = JSON.parse(result.text)
+    //     console.log(JSON.parse(result.text))
+    //     // formatResponse(finalResult.contracts,promtInputs)
+    //     // setLoading(false)
+    //  // console.log("result",result)
+    //     }
+    //     catch(error){
+    //      console.log("log",error)
+    //      setLoading(false)
+    //     }
+    //  }
 
     const formatResponse = (results,promtInputs) =>{
 
