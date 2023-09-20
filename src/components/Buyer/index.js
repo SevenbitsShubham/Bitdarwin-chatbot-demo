@@ -3,23 +3,65 @@ import { useWeb3React } from '@web3-react/core'
 import Api from '../../utils/Api';
 import Button from 'react-bootstrap/Button';
 import Modal from 'react-bootstrap/Modal';
-
+import Emitter from '../../utils/Emitter';
+import Form from 'react-bootstrap/Form';
+import MyContracts from './myContracts'
 
 export default function BuyerPortal(){
     const [contractList,setContractList] = useState([])
     const [reqcontractAddress,setreqcontractAddress] = useState(null)
     const [modalShow,setModalShow] = useState(false)
+    const [myContractsList,setMyContractsList] = useState([])
+    const [marketplaceMode,setMarketplaceMode] = useState(true)
+    const [contractType,setContractType] = useState('moneyMaker')
+    const [contractStatus,setMyContractStatus] = useState('all')
+    const [loading,setLoading] = useState(false)
+
     const {active,account,chainId,library} = useWeb3React()
 
+    useEffect(()=>{
+        if(marketplaceMode){
+            getContractList()
+        }
+        else{
+            getUserContracts()
+        }
+    },[marketplaceMode])
+    
+    useEffect(()=>{
+
+    },[loading])
 
     useEffect(()=>{
-        getContractList()
+        Emitter.on('changeToMyContracts',()=>setMarketplaceMode(false))
+        Emitter.on('changeToMarketplace',()=>setMarketplaceMode(true))
+
     },[])
-    
+
     useEffect(()=>{
 
     },[contractList.length])
 
+
+    const getUserContracts = async() =>{
+        try{
+            setLoading(true)
+            let payload={
+                contractType,
+                contractstatus: contractStatus,
+                walletAddress: account
+            }
+            let userContracts = await Api.post('/buyer/ownerContractList',payload)
+            console.log("log15",userContracts)
+            setMyContractsList(userContracts.data.contractList)
+            setContractType(userContracts.data.contractType)
+            setLoading(false)
+        }
+        catch(error){
+            setLoading(false)
+            console.log("error",error)
+        }
+    }
 
     const getContractList = async() =>{
         try{    
@@ -58,7 +100,10 @@ export default function BuyerPortal(){
     return(
         <>
            <div className='container'> 
-            <h3 className='text-center mt-3'>Buyer Portal</h3>
+           {
+            marketplaceMode ?
+           <div>
+            <h3 className='text-center mt-3'>Marketplace</h3>
 
             {
                     !active ?
@@ -105,6 +150,36 @@ export default function BuyerPortal(){
                             !contractList.length &&
                             <h5 className='text-center'>Currently No contract is available for sell.</h5> 
                         }
+            </div>
+
+            :
+                <div>
+                    <h3 className='text-center mt-3'>My Contracts</h3>
+
+                      <div>
+                      <div class="d-flex justify-content-center">
+                        <div className='col-3'>
+                      <Form.Select onChange={(e)=>setMyContractStatus(e.target.value)}>
+                            <option value='all'>All</option>
+                            <option value='inprocess'>Active Contracts</option>
+                            <option value='inactive'>Inactive Contracts</option>
+                        </Form.Select>
+                        </div>
+                      <button type="submit" class="btn btn-primary mb-2" onClick={()=>getUserContracts()}>Filter</button>
+                      </div>  
+                        </div>  
+
+                       {
+                        !loading ?
+                            myContractsList.length ?
+                            <MyContracts myContractsList={myContractsList}/>
+                            :
+                            <h5 className='text-center'>Currently requested contract is not availabel.</h5> 
+                        :
+                        <h5 className='text-center'>Loading...</h5>    
+                       } 
+                </div>
+            }                
                 <Modal
                 show={modalShow}
                 onHide={() => setModalShow(false)}

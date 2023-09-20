@@ -11,18 +11,19 @@ import {StructuredOutputParser} from "langchain/output_parsers";
 import './index.css';
 import Api from '../../utils/Api';
 import { ethers } from "ethers";
-import { useWeb3React } from '@web3-react/core'
-import table from '../../utils/marketMakers.json'
+import { useWeb3React } from '@web3-react/core';
+import table from '../../utils/marketMakers.json';
+import Emitter from '../../utils/Emitter';
 
-
-
+/////////////////////// enable strictmode in react ///////////////////////////
 export default function Home(){
     const [userInput,setUserInput] = useState('')
     const [chats,setChats] = useState([])
     const [promptManageMode,setPromptManageMode] = useState(false)
+    const [contractCurrency,setContractCurrency] = useState()
     const [contractMode,setContractMode] = useState(false)
     const [postContractMode,setPostContractMode] = useState(false)
-    const [questions,setQuestions] = useState(["Provide the time period of prediction in months.","Do you need assistance in price prediction?","Provide the prediction price of Bitcoin.","How much quantity of Bitcoin you are having?","How much contracts you want to create?"])
+    const [questions,setQuestions] = useState([{que:"For how many months you want to create the contract?",params:[]} ,{que:"Please provide the desired strike price of the contract?",params:[]},{que:"Do you need assistance in Price prediction using ARIMA?.",params:[]},{que:`How much quantity of ${contractCurrency} you want to lock?`,params:[]},{que:"How much contract options you want to create?",params:[]}])
     const [promptFormatterCount,setPromptFormatterCount] = useState(0)
     const [contractCreationPropmptInputs,setPromptInputs] = useState([])
     const [loading,setLoading] = useState(false)
@@ -31,6 +32,7 @@ export default function Home(){
     const [signature,setSignature] = useState()
     const [initPhase,setInitphase] = useState(false)
     const [messageCount,setmessageCount] = useState(0)
+    const [isPricePlotIsrequested,setIsPricePlotIsrequested] = useState(false)
     const [contractParams,setcontractParams] = useState({strikePrice:null,premium:null,openInterest:null,expirationDate:null})
     const inputRef = useRef()
     let convoChain 
@@ -45,11 +47,13 @@ export default function Home(){
     useEffect(()=>{
         // console.log("tableLog",table)
         setupInitConvoChain()
+        // handleInitChat1()
         //  testUsingChromaMemory()
         let potentialQueries= generateSqlQueries(table)
+        initBot()
         // console.log("log5.5",potentialQueries)
         // manageVectorSTorage(potentialQueries)
-        setChats([{text:"Hii",role:'assistant',property:''}]) 
+        // setChats([{text:"Hii",role:'assistant',property:''}]) 
         // handleChat1()
     },[])
 
@@ -63,11 +67,65 @@ export default function Home(){
         }
     },[active])
 
+    const initBot = async(usermessage) =>{
+        try{
+            setLoading(true)
+            let doc =[
+                {
+                  pageContent: `Human:Hi Bot: Welcome to Money Maker Bot. I'm AInstein, how can I help you.`,
+                  metadata: {
+                    speaker: "Human",
+                  },
+                },
+                {
+                    pageContent:`Human: Create a BTC market maker contract Bot:present the questions.`,
+                    metadata: {
+                        speaker: "Human",
+                      },
+                }
+        ]
+
+        console.log("log",usermessage)
+        vectorStore = await Chroma.fromDocuments( 
+            doc,
+            new OpenAIEmbeddings({openAIApiKey:process.env.REACT_APP_OPENAI_API_KEY}), 
+            {
+            collectionName: "test-collection-4",
+            url: "http://localhost:8080/http://localhost:8000", // Optional, will default to this value
+            collectionMetadata: {
+              "hnsw:space": "cosine",
+            }, // Optional, can be used to  specify the distance method of the embedding space https://docs.trychroma.com/usage-guide#changing-the-distance-function
+         });
+
+         let matching_result
+            let tempChats 
+            let result
+            if(usermessage){
+                matching_result = await vectorStore.similaritySearch(`Predict the next conversation from Bot when human question is given.Consider compilance ,risk and protection are taken under consideration.  Human:${matching_result}`,1)
+                console.log("log11",matching_result)
+                result = await handleInitChat(usermessage,matching_result)
+                tempChats=[...chats,{text:userInput,role:'user',property:''},{text:result.response,role:'assistant',property:'' }]
+
+            } 
+            else{
+                matching_result = await vectorStore.similaritySearch(`Predict the next conversation from Bot when human question is given.Consider compilance ,risk and protection are taken under consideration.  Human:Hi`,1)
+                result = await handleInitChat("Hi",matching_result)
+                tempChats=[...chats,{text:result.response,role:'assistant',property:'' }]
+            }
+            setChats(tempChats)
+            setLoading(false)
+        }
+        catch(error){
+            setLoading(false)
+            console.log(error)
+        }
+    }
+
     //setups Conversation chain with the buffer memory for initial conversation
     const setupInitConvoChain = async() =>{
         setInitphase(true)
         //if user wants to create a money maker contract first ask below questions simultanieosly: 1.To create the contract options provide the time period of prediction in months. 2.Do you need assistance in price prediction? 3.Provide the prediction price. 4.How much quantity of assets you are having? 5.How much contracts you want to create?
-        let template = "You are a Crypto moneymaker contract creator bot, greet the user in a friendly manner.  Human:Hii  AI bot:Hii, Welcome to Money Maker Bot, Do you want to create the contract.  Human:yes,I want to create the contract. AI bot:Please provide valid answers to below questions. Human:{input} AI Bot:"   
+        let template = "You are a Crypto moneymaker contract creator bot named AInstein, greet the user in a friendly manner and ask how can you help him.  Human:Create a BTC moneymaker contract.  Human:{input} AI Bot:"   
         let reqPrompt = PromptTemplate.fromTemplate(template)
         convoChain = new ConversationChain({llm,prompt:reqPrompt,memeory:memeory1})
         // let initconvoChain = await convoChain.call({input:"Hi"})
@@ -90,26 +148,15 @@ export default function Home(){
     }
 
     // const testUsingChromaMemory = async() =>{
-    //     let doc =[
-    //             {
-    //               pageContent: `Bot: Hii`,
-    //               metadata: {
-    //                 speaker: "Bot",
-    //               },
-    //             },
-    //             {
-    //               pageContent: "Human: Welcome to Market maker chatbot. Do you want to create market maker contract?",
-    //               metadata: {
-    //                 speaker: "Human",
-    //               },
-    //             },
-    //             {
-    //                 pageContent: "Human: Welcome to Market maker chatbot. Do you want to create market maker contract?",
-    //                 metadata: {
-    //                   speaker: "Human",
-    //                 },
-    //               },
-    //     ]
+        
+    //      let reqPrompt =  PromptTemplate.fromTemplate('Create a Bot output based on the given chat history.Consider compilance ,risk and protection are taken under consideration. Human:{humanConvo} Bot:')
+    //      let chain = new LLMChain({llm,prompt:reqPrompt,memory:memeory1})
+    //      console.log("log11.5",chain)
+    //      let result = await chain.call({'humanConvo':`Hi`},{input_documents:matching_result})
+    //      console.log("log12",result)
+    //      result = await chain.call({'humanConvo':`Create a BTC moneymaker contract for me.`},{input_documents:matching_result})
+    //      console.log("log12",result)
+
     // }
 
     //generates sql queries from a json data for storing it in chroma db
@@ -150,12 +197,36 @@ export default function Home(){
         }    
     } 
     
-    const handleInitChat = async(input) =>{
+    // const handleInitChat1 = async() =>{
+    //     try{
+    //         let template = "You are a Crypto moneymaker contract creator bot, greet the user in a friendly manner.  Bot: Welcome to Market maker chatbot.I am AInstein, how can I help you today. Human: Create a BTC market maker contract Bot: For how much months you want to create contract?. Human:3 Bot:What will be the strike price of the contract?. Human:I don't know  Bot: Would you like to show us the plot using our algorithm. Human:yes Bot:Provided ARIMA plot. Human: 32000 Bot: How much BTC you want to lock?. Human: 10 Bot: How much contract options you want ?. Human: 5  Human:{input} AI Bot:"   
+    //     let reqPrompt = PromptTemplate.fromTemplate(template)
+    //     convoChain = new ConversationChain({llm,prompt:reqPrompt,memeory:memeory1})
+    //     let result = await convoChain.call({input:"Hii"})
+    //     console.log("result",result)
+    //     console.log("result1",await convoChain.call({input:"Create market maker contract for BTC."}))
+    //     }
+    //     catch(error){
+
+    //     }
+    // }
+
+    const handleInitChat = async(input,matching_result) =>{
         try{
-            let template = "You are a Crypto moneymaker contract creator bot, greet the user in a friendly manner.  Human:Hii  AI bot:Hello! Welcome to Money Maker Bot. I'm here to help you create your contract. Please provide valid answers to the questions below.  Human:yes,I want to create the contract. AI bot:Please provide valid answers to below questions. Human:{input} AI Bot:"   
-        let reqPrompt = PromptTemplate.fromTemplate(template)
-        convoChain = new ConversationChain({llm,prompt:reqPrompt,memeory:memeory1})
+            // let template = "You are a Crypto moneymaker contract creator bot and your name is AInstein, greet the user in a friendly manner.  Human:Hii  AI bot:Hello! Welcome to Money Maker Bot. I'm here to help you create your contract. Please provide valid answers to the questions below.  Human:yes,I want to create the contract. AI bot:Please provide valid answers to below questions. Human:{input} AI Bot:"   
+            if(matching_result){
+                console.log("log13",matching_result[0].pageContent)
+                let template = `You are a Crypto moneymaker contract creator bot and your name is AInstein, ask the user what you can do today for him and after that give answers to the user question in friendly manner. ${matching_result[0].pageContent}   Human:{input} Bot:`                   
+            let reqPrompt = PromptTemplate.fromTemplate(template)
+            convoChain = new ConversationChain({llm,prompt:reqPrompt,memeory:memeory1})
+                return await convoChain.call({input})
+            }   
+            else{
+            let template = "You are a Crypto moneymaker contract creator bot and your name is AInstein, ask the user what you can do today for him and after that give answers to the user question in friendly manner.  Human:Hii  AI bot: Welcome to Money Maker Bot. I'm AInstein, how can I help you.  Human:Creat a BTC moneymaker contract.  AI bot:Sure. Human:{input} AI Bot:"   
+            let reqPrompt = PromptTemplate.fromTemplate(template)
+            convoChain = new ConversationChain({llm,prompt:reqPrompt,memeory:memeory1})
             return await convoChain.call({input})
+            }
         }
         catch(error){
 
@@ -164,7 +235,7 @@ export default function Home(){
 
     const handleUserInput = async()=>{
         //  setChats(()=>[...chats,{text:userInput,role:'user'} ] )
-        console.log("debug1")
+        console.log("debug1",messageCount)
         setLoading(true)
         inputRef.current.value=''
         let tempChats = [...chats,{text:userInput,role:'user',property:''}]        
@@ -172,21 +243,66 @@ export default function Home(){
         setmessageCount(messageCount+1)
           console.log("log",promptManageMode,promptFormatterCount,contractCreationPropmptInputs)  
          if(promptManageMode){
-
-            if(promptFormatterCount === 1){
-                if(userInput.toLocaleLowerCase() === 'yes'){
-                   let plotUrl= await handlePricePrediction()
-                   console.log("log7",plotUrl)
-                   tempChats= [...tempChats,{text:plotUrl,role:'assistant',property:'plot' },{text:questions[promptFormatterCount+1],role:'assistant',property:'' }]
-                   setChats(tempChats)  
-                }else{
-                   tempChats= [...tempChats,{text:questions[promptFormatterCount+1],role:'assistant',property:'' } ]
-                   setChats(tempChats)  
+                console.log("log14",isPricePlotIsrequested)
+            if(promptFormatterCount === 1 || isPricePlotIsrequested){
+                let isPriceNotProvided = isNaN(userInput)
+                console.log("log15",isPriceNotProvided,isPricePlotIsrequested)
+                if(isPriceNotProvided && !isPricePlotIsrequested){
+                    tempChats= [...tempChats,{text:questions[promptFormatterCount+1].que,role:'assistant',property:'',params:null}]
+                    setIsPricePlotIsrequested(true)
+                    setChats(tempChats)  
+                    setPromptFormatterCount(promptFormatterCount+1)
+                    setPromptFormatterCount(promptFormatterCount+1)
                 }
-                setPromptFormatterCount(promptFormatterCount+1)
+                else if(isPricePlotIsrequested){
+                    console.log("log15",isPricePlotIsrequested)
+                    let plotUrl= await handlePricePrediction()
+                    // console.log("log7",plotUrl)
+                    tempChats= [...tempChats,{text:plotUrl,role:'assistant',property:'plot',params:null },{text:"Hope this helps you ,now please provide the strike price",role:'assistant',property:'',params:null }]
+                    setIsPricePlotIsrequested(false)
+                    setChats(tempChats)  
+                }
+                else if(!isPriceNotProvided && !isPricePlotIsrequested){
+                    // setPromptInputs(()=>[...contractCreationPropmptInputs,userInput])
+                    // tempChats= [...tempChats,{text:questions[promptFormatterCount+2].que,role:'assistant',property:'',params:questions[promptFormatterCount+2].params } ]
+                    // setChats(tempChats) 
+                    // setPromptFormatterCount(promptFormatterCount+1)
+
+                    if(questions[promptFormatterCount+2].que.includes('How much quantity')){
+                        tempChats= [...tempChats,{text:`How much quantity of ${contractCurrency} you want to lock?`,role:'assistant',property:'',params:questions[promptFormatterCount+1].params}]
+                    }
+                    else{
+                        tempChats= [...tempChats,{text:questions[promptFormatterCount+1].que,role:'assistant',property:'',params:questions[promptFormatterCount+1].params}]
+                    }
+                    setChats(tempChats)  
+                    setPromptFormatterCount(promptFormatterCount+2)
+                    setPromptInputs(()=>[...contractCreationPropmptInputs,userInput])
+                }
+                else{
+                    setPromptInputs(()=>[...contractCreationPropmptInputs,userInput])
+                    tempChats= [...tempChats,{text:questions[promptFormatterCount+1].que,role:'assistant',property:'',params:questions[promptFormatterCount+1].params } ]
+                    setChats(tempChats) 
+                    setPromptFormatterCount(promptFormatterCount+1)
+                }
+                // if(givenInput === 'yes'){
+                //    let plotUrl= await handlePricePrediction()
+                //    console.log("log7",plotUrl)
+                //    tempChats= [...tempChats,{text:plotUrl,role:'assistant',property:'plot',params:null },{text:questions[promptFormatterCount+1],role:'assistant',property:'',params:null }]
+                //    setChats(tempChats)  
+                // }else{
+                //    tempChats= [...tempChats,{text:questions[promptFormatterCount+1].que,role:'assistant',property:'',params:questions[promptFormatterCount+1].params } ]
+                //    setChats(tempChats)  
+                // }
+                
             }
             else{
-                tempChats= [...tempChats,{text:questions[promptFormatterCount+1],role:'assistant',property:'' } ]
+
+                if(questions[promptFormatterCount+1].que.includes('How much quantity')){
+                    tempChats= [...tempChats,{text:`How much quantity of ${contractCurrency} you want to lock?`,role:'assistant',property:'',params:questions[promptFormatterCount+1].params}]
+                }
+                else{
+                    tempChats= [...tempChats,{text:questions[promptFormatterCount+1].que,role:'assistant',property:'',params:questions[promptFormatterCount+1].params}]
+                }
                 setChats(tempChats)  
                 setPromptFormatterCount(promptFormatterCount+1)
                 setPromptInputs(()=>[...contractCreationPropmptInputs,userInput])
@@ -198,16 +314,26 @@ export default function Home(){
 
          } 
          else if(initPhase){
-            let result = await handleInitChat(userInput)
-            console.log("log7.5",result)
-            tempChats.push({text:result.response,role:'assistant',property:'' })
-            setChats(tempChats)
-            if(messageCount === 0){
-                tempChats.push({text:questions[promptFormatterCount],role:'assistant',property:''})
-                setChats(tempChats)   
-                setInitphase(false)
-                setPromptManageMode(true)
-            }
+            // let result = await handleInitChat(userInput)
+            // console.log("log7.5",result)
+            // tempChats.push({text:result.response,role:'assistant',property:'' })
+            // setChats(tempChats)
+            let givenInput = userInput.toLocaleLowerCase()
+                if((givenInput.includes('money maker') || givenInput.includes('moneymaker')) && givenInput.includes('create')){
+                    if(givenInput.includes('eth') || givenInput.includes('ethereum') || givenInput.includes('eth')){
+                        setContractCurrency('ETH')
+                    }
+                    else{
+                        setContractCurrency('BTC')
+                    }
+                    tempChats.push({text:"Sure",role:'assistant',property:'',params:null},{text:questions[promptFormatterCount].que,role:'assistant',property:'',params:null})
+                    setChats(tempChats)   
+                    setInitphase(false)
+                    setPromptManageMode(true)    
+                }
+                else{
+                    initBot(userInput) 
+                }
          }
          else{
             //handles conversation after contract creation process
@@ -219,6 +345,7 @@ export default function Home(){
             else{
                 setPromptManageMode(false)
                 let reqPromptInputs = [...contractCreationPropmptInputs,userInput]
+                setPromptInputs(reqPromptInputs)
                 setContractMode(true)
                 handleChat(reqPromptInputs)
             }
@@ -385,7 +512,7 @@ export default function Home(){
         }
     }
 
-    const handleCreateContract = async(query) =>{
+    const handleCreateContract = async(query,deploymentModethod) =>{
         try{
         console.log("queryLog",query)
         let sqlQueryHex=  Buffer.from(sqlQuery, 'utf-8').toString('hex')
@@ -402,6 +529,9 @@ export default function Home(){
             expirationDate:contractParams.expirationDate,
             query:sqlQuery,
             hex:sqlQueryHex,
+            quantity:contractCreationPropmptInputs[2],
+            currency:contractCurrency,
+            deployment:deploymentModethod,
             signature:reqSignature
         }
         await Api.post('/moneyMaker/createContract',payload)
@@ -411,11 +541,20 @@ export default function Home(){
         setContractMode(false)
         let tempChats = [...chats,{text:"Contract creation is in progress, Thanks!!",role:'assistant',property:''}]        
         setChats(tempChats)     
-        setPostContractMode(true)  
+        resetContractMode()
+        Emitter.emit('callBalanceApi',null)
         }
         catch(error){
             console.log("error",error)
         }
+    }
+
+    const resetContractMode = () =>{
+        setContractMode(false)
+        setInitphase(true)  
+        setPromptFormatterCount(0)
+        setPromptInputs([])
+        setSqlQuery('')
     }
 
     return(
@@ -423,7 +562,7 @@ export default function Home(){
         <div className='container py-5'>
             {
                 !active &&
-                  <h4 className='text-center text-danger mt-2'>Please Connect your wallet!</h4>
+                  <h4 className='text-center text-danger mt-2'>AInstein wants you to Connect your wallet!</h4>
             }
             <div className='offset-3 mainDiv'>
                 <div className='col-8 chatHistory'>
@@ -450,7 +589,10 @@ export default function Home(){
                                                     <div className='chatSection-assistance-contractOp ' key={i}>
                                                         <div className=' chat-text-modifier p-4'>     
                                                                 <span className=' p-2'>SQL Query : <span className='font-weight-bold'>{chat.text}</span> </span><br/>
-                                                                <button className='btn btn-primary btn-sm mt-1' onClick={()=>handleCreateContract(chat.text)}>Create Contract</button>
+                                                                <button className=' m-2 btn btn-primary btn-sm mt-1' onClick={()=>handleCreateContract(chat.text,'BitGo')}>Create Contract With BitGo</button>
+                                                                <button className=' m-2 btn btn-primary btn-sm mt-1' onClick={()=>handleCreateContract(chat.text,'ICP')}>Create Contract With ICP</button>
+                                                                <button className=' m-2 btn btn-primary btn-sm mt-1' onClick={()=>resetContractMode()}>Cancel</button>
+
                                                         </div>
                                                     </div>    
                                                     :

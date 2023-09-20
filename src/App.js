@@ -7,13 +7,13 @@ import  BuyerPortal  from "./components/Buyer/index";
 import { useWeb3React } from '@web3-react/core'
 import { injected } from './utils/connectionHelper';
 
-
 function App() {
 
   useEffect(()=>{
     
   },[])
 
+  
   return (
     <>
     <NavbarComponent/>
@@ -21,6 +21,7 @@ function App() {
       <Routes>
           <Route path='/' element={<Home/>}/>
           <Route path='/buyer' element={<BuyerPortal/>}/>
+
       </Routes>
     </BrowserRouter>
     </>

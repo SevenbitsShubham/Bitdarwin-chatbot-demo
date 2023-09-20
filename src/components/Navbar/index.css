@@ -6,6 +6,15 @@
      /* border-radius: 5%;    */
 }
 
+.balanceClass{
+    color: aliceblue;
+    margin-left: 3rem;
+}
+
 .pointerCursor:hover{
     cursor: pointer;
+}
+
+.myCOntractClass{
+    margin-left: 3rem;
 }
