@@ -3,7 +3,7 @@ import { Button } from 'bootstrap';
 import Form from 'react-bootstrap/Form';
 import { OpenAI } from "langchain/llms/openai";
 import { ConversationChain,LLMChain } from "langchain/chains";
-import { PromptTemplate } from 'langchain/prompts'; 
+import { PromptTemplate,ChatPromptTemplate,SystemMessagePromptTemplate,HumanMessagePromptTemplate } from 'langchain/prompts'; 
 import {BufferMemory,ConversationBufferMemory} from 'langchain/memory';
 import {Chroma} from "langchain/vectorstores/chroma"
 import {OpenAIEmbeddings} from "langchain/embeddings/openai"
@@ -14,6 +14,10 @@ import { ethers } from "ethers";
 import { useWeb3React } from '@web3-react/core';
 import table from '../../utils/marketMakers.json';
 import Emitter from '../../utils/Emitter';
+
+import { createTaggingChain } from "langchain/chains";
+import { ChatOpenAI } from "langchain/chat_models/openai";
+// import type { FunctionParameters } from "langchain/output_parsers";
 
 /////////////////////// enable strictmode in react ///////////////////////////
 export default function Home(){
@@ -45,6 +49,8 @@ export default function Home(){
     let vectorStore
 
     useEffect(()=>{
+        chatTemplateDemo()
+        // handleConversation()
         // console.log("tableLog",table)
         setupInitConvoChain()
         // handleInitChat1()
@@ -55,6 +61,7 @@ export default function Home(){
         // manageVectorSTorage(potentialQueries)
         // setChats([{text:"Hii",role:'assistant',property:''}]) 
         // handleChat1()
+        
     },[])
 
     useEffect(()=>{
@@ -66,6 +73,175 @@ export default function Home(){
             setProvider(new ethers.BrowserProvider(library._provider))
         }
     },[active])
+
+    const chatTemplateDemo = async() =>{
+        // const systemTemplate = "Below are some things to ask the user for in a coversation way. you should only ask one question at a time even if you don't get all the info \
+        // don't ask as a list! Don't greet the user! Don't say Hi.Explain you need to get some info regarding the provided item. If the ask_for list is empty then thank them and ask how you can help them \n\n \
+        // ### ask_for list: {askFor}";
+
+        // const systemTemplate ="Below mentioned a required parameter from the user. Ask the user about it in conversational way.Don't greet the user! Don't say Hi.If asked tell to to create the money maker contract it is required. If ask_for parameter is empty then thank them and ask how you can help them. ### ask_for:{input}"
+// // const humanTemplate = "{text}";
+
+        // let prompt  = PromptTemplate.fromTemplate(systemTemplate)
+        // let gatheringChain = new LLMChain({llm,prompt})
+        // let chat = await gatheringChain.run({input:'name'})        
+        // console.log("chat",chat)
+// // Format the messages
+// const formattedChatPrompt = await chatPrompt.formatMessages({
+//     askFor: ['name','email'],
+// });
+
+
+        // let first_prompt = new ChatPromptTemplate([
+        //             new SystemMessagePromptTemplate({
+                        // content: "Below is are some things to ask the user for in a coversation way. you should only ask one question at a time even if you don't get all the info \
+                        // don't ask as a list! Don't greet the user! Don't say Hi.Explain you need to get some info. If the ask_for list is empty then thank them and ask how you can help them \n\n \
+                        // ### ask_for list: {askFor}"
+        //             }),
+        //        ])
+
+        // const systemTemplate = "You are a helpful assistant that translates {input_language} to {output_language}.";
+        // const humanTemplate = "{text}";
+        const systemTemplate ="Below is are some things to ask the user for in a coversation way. you should only ask one question at a time even if you don't get all the info \
+        don't ask as a list! Don't greet the user! Don't say Hi.Explain you need to get some info. If the ask_for list is empty then thank them and ask how you can help them \n\n \
+        ### ask_for list: {askFor}"
+
+        
+        let systemMsg =  SystemMessagePromptTemplate.fromTemplate(systemTemplate)
+        const chatPrompt = ChatPromptTemplate.fromMessages([
+          ["system",systemTemplate],
+        //   ["human", humanTemplate],
+        ]);
+        console.log("val")
+        // const promptValue = await chatPrompt.formatPrompt();
+        // console.log("log500",promptValue);
+        let gatheringChain = new LLMChain({llm,prompt:chatPrompt})
+        let chat = await gatheringChain.run({askFor:['name','email']})        
+        console.log("chat",chat)
+    }
+
+    const handleConversation = async() =>{
+        try{
+
+            //declared the schema
+            const schema={
+                type:"object",
+                properties:{
+                    currency:{type:"string",description:"To create a money maker contract this is a crypto currency for which we will create the contract."},
+                    period:{type:"number",description:"This is the prediction period in months for money maker contract."},
+                    strikePrice:{type:"number",description:"This is a strikePrice for which user will predict price of the currency in given time period in USD for creating money maker contract."},
+                    quantity:{type:"number",description:"This is the quantity of token to lock in money maker smart contract"},
+                    noOfContracts:{type:"number",description:"This is the number of contract option parameters for creating money maker smart contract."}                   
+                }
+
+            }
+
+            //initialized openAI instance
+            const chatModel = new ChatOpenAI({temperature: 0,
+                modelName: "gpt-3.5-turbo",
+                openAIApiKey:process.env.REACT_APP_OPENAI_API_KEY})
+
+            //initialized tagging chain    
+            const chain = createTaggingChain(schema,chatModel)
+            let result = await chain.run('I want to create a contract in BTC ,where strikeprice will be $30000 ,also I want to lock 4 BTC and create 5 contract options')  
+            console.log("log16",result) 
+
+            let currentResult = {currency:null,period:null,strikePrice:null,quantity:null,noOfContracts:null}
+            
+            
+            
+            //function to check empty paramters
+            function checkWhatIsEmpty(contractDetails){
+                let requiredEmptyFields = []
+                for (const key in contractDetails){
+                    if(contractDetails[key] === null || contractDetails[key] === '' || contractDetails[key] === 0){
+                        requiredEmptyFields.push(key)
+                        console.log(`Field ${key} is empty.`)
+                    }
+                }
+                return requiredEmptyFields
+            }
+            
+                console.log("log17",checkWhatIsEmpty(currentResult))
+
+            //function to fill the no empty fields in the result
+            function addNonEmptyDetails(currentDetails,newDetails){
+                let reqDetails = {}
+                for(let key in newDetails){
+                    if(newDetails[key] !== null && !newDetails[key] !== '' && !newDetails[key] !== 0){
+                        reqDetails[key] = newDetails[key] 
+                    }   
+                }
+
+                for(let key in reqDetails){
+                    if(currentDetails[key] === null || currentDetails[key] === '' || currentDetails[key] === 0){
+                        currentDetails[key] = reqDetails[key]
+                    }   
+                }
+                return currentDetails
+            }    
+            console.log("log18" ,addNonEmptyDetails(currentResult,result))
+
+            async function askForReqFields(askFor=['name','age','location']){
+
+            const systemTemplate = "Below is are some things to ask the user for in a coversation way. you should only ask one question at a time even if you don't get all the info \
+            don't ask as a list! Don't greet the user! Don't say Hi.Explain you need to get some info. If the ask_for list is empty then thank them and ask how you can help them \n\n \
+            ### ask_for list: {askFor}";
+            // const humanTemplate = "{text}";
+             
+            const messageTemplates = [
+                new SystemMessagePromptTemplate({
+                  content: "Welcome to the chat!",
+                }),
+                new HumanMessagePromptTemplate({
+                  content: "{askFor}",
+                }),
+              ];
+
+            const chatPromptTemplate = new ChatPromptTemplate({
+                SystemMessage: {
+                    content: 'You are a helpful assistant that translates English to French.'
+                },
+            });  
+
+            const formattedPrompt = await chatPromptTemplate.formatPrompt();
+
+            // const chatPrompt = ChatPromptTemplate.fromPromptMessages([
+            //     SystemMessagePromptTemplate.fromTemplate(systemTemplate),
+            // //    ["system", SystemMessagePromptTemplate.fromTemplate(systemTemplate)],
+            // ]);
+            //   const formattedPrompt = await chatPrompt.formatPrompt();                  
+
+            let gatheringChain = new LLMChain({llm,prompt:formattedPrompt})
+            let chat = await gatheringChain.run({askFor:['name','email']})
+            // let chat = await gatheringChain.run({input:"Hii"})    
+
+            return chat    
+            }
+
+            
+            console.log("log19",currentResult) 
+            console.log("log90",askForReqFields()) 
+            function filterResponse(textInput,currentDetails){
+                let chain = createTaggingChain(schema,chatModel)
+                let res = chain.run(textInput)
+
+                let updatedDetails =  addNonEmptyDetails(currentDetails,res)
+                let remainingData =  checkWhatIsEmpty(updatedDetails)
+                return remainingData
+            }
+
+            let inputText = 'I want to create a contract in BTC ,where strikeprice will be $30000 ,also I want to lock 4 BTC and create 5 contract options'
+            currentResult = {currency:null,period:null,strikePrice:null,quantity:null,noOfContracts:null}
+            let remianingDetails = filterResponse(inputText,currentResult)
+            console.log("log20",remianingDetails)
+            console.log("log21", await askForReqFields(remianingDetails))
+        }
+        catch(error){
+            console.log('error',error)
+        }
+    }
+
 
     const initBot = async(usermessage) =>{
         try{
@@ -179,7 +355,7 @@ export default function Home(){
     const llm = new OpenAI({
         // organization: "org-cRDHZiDZZml2OhFTMeIqHr6c",
         // apiKey: ,
-        temperature: 0.6,
+        temperature: 0,
         modelName: "gpt-3.5-turbo",
         openAIApiKey:process.env.REACT_APP_OPENAI_API_KEY
     });  
