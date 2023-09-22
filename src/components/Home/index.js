@@ -1,10 +1,9 @@
 import React,{useState,useEffect,useRef} from 'react'
-import { Button } from 'bootstrap';
 import Form from 'react-bootstrap/Form';
 import { OpenAI } from "langchain/llms/openai";
 import { ConversationChain,LLMChain } from "langchain/chains";
-import { PromptTemplate,ChatPromptTemplate,SystemMessagePromptTemplate,HumanMessagePromptTemplate } from 'langchain/prompts'; 
-import {BufferMemory,ConversationBufferMemory} from 'langchain/memory';
+import { PromptTemplate,ChatPromptTemplate,HumanMessagePromptTemplate } from 'langchain/prompts'; 
+import {BufferMemory} from 'langchain/memory';
 import {Chroma} from "langchain/vectorstores/chroma"
 import {OpenAIEmbeddings} from "langchain/embeddings/openai"
 import {StructuredOutputParser} from "langchain/output_parsers";
@@ -38,6 +37,7 @@ export default function Home(){
     const [messageCount,setmessageCount] = useState(0)
     const [isPricePlotIsrequested,setIsPricePlotIsrequested] = useState(false)
     const [contractParams,setcontractParams] = useState({strikePrice:null,premium:null,openInterest:null,expirationDate:null})
+    const [currentContractParams,setcurrentContractParams] = useState({currency:null,periodInMonth:null,strikePriceInUsd:null,tokenQuantity:null,noOfContracts:null})
     const inputRef = useRef()
     let convoChain 
 
@@ -49,18 +49,12 @@ export default function Home(){
     let vectorStore
 
     useEffect(()=>{
-        chatTemplateDemo()
-        // handleConversation()
+        // chatTemplateDemo()
         // console.log("tableLog",table)
+        // handleContractFormConversation()
         setupInitConvoChain()
-        // handleInitChat1()
-        //  testUsingChromaMemory()
         let potentialQueries= generateSqlQueries(table)
         initBot()
-        // console.log("log5.5",potentialQueries)
-        // manageVectorSTorage(potentialQueries)
-        // setChats([{text:"Hii",role:'assistant',property:''}]) 
-        // handleChat1()
         
     },[])
 
@@ -74,168 +68,100 @@ export default function Home(){
         }
     },[active])
 
-    const chatTemplateDemo = async() =>{
-        // const systemTemplate = "Below are some things to ask the user for in a coversation way. you should only ask one question at a time even if you don't get all the info \
-        // don't ask as a list! Don't greet the user! Don't say Hi.Explain you need to get some info regarding the provided item. If the ask_for list is empty then thank them and ask how you can help them \n\n \
-        // ### ask_for list: {askFor}";
-
-        // const systemTemplate ="Below mentioned a required parameter from the user. Ask the user about it in conversational way.Don't greet the user! Don't say Hi.If asked tell to to create the money maker contract it is required. If ask_for parameter is empty then thank them and ask how you can help them. ### ask_for:{input}"
-// // const humanTemplate = "{text}";
-
-        // let prompt  = PromptTemplate.fromTemplate(systemTemplate)
-        // let gatheringChain = new LLMChain({llm,prompt})
-        // let chat = await gatheringChain.run({input:'name'})        
-        // console.log("chat",chat)
-// // Format the messages
-// const formattedChatPrompt = await chatPrompt.formatMessages({
-//     askFor: ['name','email'],
-// });
-
-
-        // let first_prompt = new ChatPromptTemplate([
-        //             new SystemMessagePromptTemplate({
-                        // content: "Below is are some things to ask the user for in a coversation way. you should only ask one question at a time even if you don't get all the info \
-                        // don't ask as a list! Don't greet the user! Don't say Hi.Explain you need to get some info. If the ask_for list is empty then thank them and ask how you can help them \n\n \
-                        // ### ask_for list: {askFor}"
-        //             }),
-        //        ])
-
-        // const systemTemplate = "You are a helpful assistant that translates {input_language} to {output_language}.";
-        // const humanTemplate = "{text}";
-        const systemTemplate ="Below is are some things to ask the user for in a coversation way. you should only ask one question at a time even if you don't get all the info \
-        don't ask as a list! Don't greet the user! Don't say Hi.Explain you need to get some info. If the ask_for list is empty then thank them and ask how you can help them \n\n \
-        ### ask_for list: {askFor}"
-
-        
-        let systemMsg =  SystemMessagePromptTemplate.fromTemplate(systemTemplate)
-        const chatPrompt = ChatPromptTemplate.fromMessages([
-          ["system",systemTemplate],
-        //   ["human", humanTemplate],
-        ]);
-        console.log("val")
-        // const promptValue = await chatPrompt.formatPrompt();
-        // console.log("log500",promptValue);
-        let gatheringChain = new LLMChain({llm,prompt:chatPrompt})
-        let chat = await gatheringChain.run({askFor:['name','email']})        
-        console.log("chat",chat)
+    //declared the schema
+    const schema={
+        type:"object",
+        properties:{
+            currency:{type:"string",description:"To create a money maker contract this is a crypto currency for which we will create the contract."},
+            periodInMonth:{type:"number",description:"This is the prediction period in months for money maker contract."},
+            strikePriceInUsd:{type:"number",description:"This is a strikePrice for which user will predict price of the currency in given time period in USD for creating money maker contract."},
+            tokenQuantity:{type:"number",description:"This is the quantity of token to lock in money maker smart contract"},
+            noOfContracts:{type:"number",description:"This is the number of contract option parameters for creating money maker smart contract."}                   
+        }
     }
 
-    const handleConversation = async() =>{
+    //initialized openAI instance
+    const chatModel = new ChatOpenAI({temperature: 0,
+        modelName: "gpt-3.5-turbo",
+        openAIApiKey:process.env.REACT_APP_OPENAI_API_KEY})
+
+     //creates question based on the given input field
+     async function askForReqFields(ask_for='name'){
+        console.log("input",ask_for)
+        const systemTemplate ="Ask the user for about {ask_for}  in one sentence. Only ask about {ask_for} of the user.Don't greet the user! Don't say Hi.Only if user asks the reason behind the question then explain your need to get some info for crating money maker contract ."
+
+
+        let humanMsg =  HumanMessagePromptTemplate.fromTemplate(systemTemplate)
+        const chatPrompt = ChatPromptTemplate.fromPromptMessages([
+            humanMsg
+        ]);
+    let gatheringChain = new LLMChain({llm:chatModel,prompt:chatPrompt})
+    let chat = await gatheringChain.call({ask_for})
+
+    return chat    
+    }
+
+    async function filterResponse(textInput,currentDetails){
+        console.log("log19.5",textInput.length)
+        let chain = createTaggingChain(schema,chatModel)
+        let res = await chain.run(textInput)
+        console.log("log20",currentDetails,res)
+        let updatedDetails =  addNonEmptyDetails(currentDetails,res)
+        let remianingDetails =  checkWhatIsEmpty(updatedDetails)
+        console.log("log21",updatedDetails,remianingDetails)
+        return {remianingDetails,updatedDetails}
+    }    
+
+      //function to check empty paramters
+      function checkWhatIsEmpty(contractDetails){
+        let requiredEmptyFields = []
+        for (const key in contractDetails){
+            if(contractDetails[key] === null || contractDetails[key] === '' || contractDetails[key] === 0){
+                requiredEmptyFields.push(key)
+                console.log(`Field ${key} is empty.`)
+            }
+        }
+        return requiredEmptyFields
+    }
+    
+
+    //function to fill the no empty fields in the result
+    function addNonEmptyDetails(currentDetails,newDetails){
+        console.log("log19.5",currentDetails,newDetails)
+        let reqDetails = {}
+        for(let key in newDetails){
+            if(newDetails[key] !== null && newDetails[key] !== '' && newDetails[key] !== 0){
+                reqDetails[key] = newDetails[key] 
+            }   
+        }
+
+        for(let key in reqDetails){
+            if(currentDetails[key] === null || currentDetails[key] === '' || currentDetails[key] === 0){
+                currentDetails[key] = reqDetails[key]
+            }   
+        }
+        console.log("log21",currentDetails)
+        return currentDetails
+    }  
+
+
+    const handleContractFormConversation = async(inputText='No data available.',tempChats=[...chats]) =>{
         try{
-
-            //declared the schema
-            const schema={
-                type:"object",
-                properties:{
-                    currency:{type:"string",description:"To create a money maker contract this is a crypto currency for which we will create the contract."},
-                    period:{type:"number",description:"This is the prediction period in months for money maker contract."},
-                    strikePrice:{type:"number",description:"This is a strikePrice for which user will predict price of the currency in given time period in USD for creating money maker contract."},
-                    quantity:{type:"number",description:"This is the quantity of token to lock in money maker smart contract"},
-                    noOfContracts:{type:"number",description:"This is the number of contract option parameters for creating money maker smart contract."}                   
-                }
+            //initialized tagging chain
+            console.log("log19",inputText)
+            let {remianingDetails,updatedDetails} = await filterResponse(inputText,currentContractParams)
+            setcurrentContractParams(updatedDetails)
+            console.log("remianingDetails",remianingDetails,"updatedDetails",updatedDetails)
+            console.log("log21", )
+            if(remianingDetails.length){
+                let requestedChat = await askForReqFields(remianingDetails[0])
+                console.log("log22",requestedChat)
+                setChats(()=>[...tempChats,{text:requestedChat.text,role:'assistant',property:'' }])    
+            }
+            else{
 
             }
-
-            //initialized openAI instance
-            const chatModel = new ChatOpenAI({temperature: 0,
-                modelName: "gpt-3.5-turbo",
-                openAIApiKey:process.env.REACT_APP_OPENAI_API_KEY})
-
-            //initialized tagging chain    
-            const chain = createTaggingChain(schema,chatModel)
-            let result = await chain.run('I want to create a contract in BTC ,where strikeprice will be $30000 ,also I want to lock 4 BTC and create 5 contract options')  
-            console.log("log16",result) 
-
-            let currentResult = {currency:null,period:null,strikePrice:null,quantity:null,noOfContracts:null}
             
-            
-            
-            //function to check empty paramters
-            function checkWhatIsEmpty(contractDetails){
-                let requiredEmptyFields = []
-                for (const key in contractDetails){
-                    if(contractDetails[key] === null || contractDetails[key] === '' || contractDetails[key] === 0){
-                        requiredEmptyFields.push(key)
-                        console.log(`Field ${key} is empty.`)
-                    }
-                }
-                return requiredEmptyFields
-            }
-            
-                console.log("log17",checkWhatIsEmpty(currentResult))
-
-            //function to fill the no empty fields in the result
-            function addNonEmptyDetails(currentDetails,newDetails){
-                let reqDetails = {}
-                for(let key in newDetails){
-                    if(newDetails[key] !== null && !newDetails[key] !== '' && !newDetails[key] !== 0){
-                        reqDetails[key] = newDetails[key] 
-                    }   
-                }
-
-                for(let key in reqDetails){
-                    if(currentDetails[key] === null || currentDetails[key] === '' || currentDetails[key] === 0){
-                        currentDetails[key] = reqDetails[key]
-                    }   
-                }
-                return currentDetails
-            }    
-            console.log("log18" ,addNonEmptyDetails(currentResult,result))
-
-            async function askForReqFields(askFor=['name','age','location']){
-
-            const systemTemplate = "Below is are some things to ask the user for in a coversation way. you should only ask one question at a time even if you don't get all the info \
-            don't ask as a list! Don't greet the user! Don't say Hi.Explain you need to get some info. If the ask_for list is empty then thank them and ask how you can help them \n\n \
-            ### ask_for list: {askFor}";
-            // const humanTemplate = "{text}";
-             
-            const messageTemplates = [
-                new SystemMessagePromptTemplate({
-                  content: "Welcome to the chat!",
-                }),
-                new HumanMessagePromptTemplate({
-                  content: "{askFor}",
-                }),
-              ];
-
-            const chatPromptTemplate = new ChatPromptTemplate({
-                SystemMessage: {
-                    content: 'You are a helpful assistant that translates English to French.'
-                },
-            });  
-
-            const formattedPrompt = await chatPromptTemplate.formatPrompt();
-
-            // const chatPrompt = ChatPromptTemplate.fromPromptMessages([
-            //     SystemMessagePromptTemplate.fromTemplate(systemTemplate),
-            // //    ["system", SystemMessagePromptTemplate.fromTemplate(systemTemplate)],
-            // ]);
-            //   const formattedPrompt = await chatPrompt.formatPrompt();                  
-
-            let gatheringChain = new LLMChain({llm,prompt:formattedPrompt})
-            let chat = await gatheringChain.run({askFor:['name','email']})
-            // let chat = await gatheringChain.run({input:"Hii"})    
-
-            return chat    
-            }
-
-            
-            console.log("log19",currentResult) 
-            console.log("log90",askForReqFields()) 
-            function filterResponse(textInput,currentDetails){
-                let chain = createTaggingChain(schema,chatModel)
-                let res = chain.run(textInput)
-
-                let updatedDetails =  addNonEmptyDetails(currentDetails,res)
-                let remainingData =  checkWhatIsEmpty(updatedDetails)
-                return remainingData
-            }
-
-            let inputText = 'I want to create a contract in BTC ,where strikeprice will be $30000 ,also I want to lock 4 BTC and create 5 contract options'
-            currentResult = {currency:null,period:null,strikePrice:null,quantity:null,noOfContracts:null}
-            let remianingDetails = filterResponse(inputText,currentResult)
-            console.log("log20",remianingDetails)
-            console.log("log21", await askForReqFields(remianingDetails))
         }
         catch(error){
             console.log('error',error)
@@ -323,18 +249,6 @@ export default function Home(){
 
     }
 
-    // const testUsingChromaMemory = async() =>{
-        
-    //      let reqPrompt =  PromptTemplate.fromTemplate('Create a Bot output based on the given chat history.Consider compilance ,risk and protection are taken under consideration. Human:{humanConvo} Bot:')
-    //      let chain = new LLMChain({llm,prompt:reqPrompt,memory:memeory1})
-    //      console.log("log11.5",chain)
-    //      let result = await chain.call({'humanConvo':`Hi`},{input_documents:matching_result})
-    //      console.log("log12",result)
-    //      result = await chain.call({'humanConvo':`Create a BTC moneymaker contract for me.`},{input_documents:matching_result})
-    //      console.log("log12",result)
-
-    // }
-
     //generates sql queries from a json data for storing it in chroma db
     const generateSqlQueries = (tableData) =>{
         let queries=[]
@@ -372,26 +286,12 @@ export default function Home(){
             console.log("error",error)
         }    
     } 
-    
-    // const handleInitChat1 = async() =>{
-    //     try{
-    //         let template = "You are a Crypto moneymaker contract creator bot, greet the user in a friendly manner.  Bot: Welcome to Market maker chatbot.I am AInstein, how can I help you today. Human: Create a BTC market maker contract Bot: For how much months you want to create contract?. Human:3 Bot:What will be the strike price of the contract?. Human:I don't know  Bot: Would you like to show us the plot using our algorithm. Human:yes Bot:Provided ARIMA plot. Human: 32000 Bot: How much BTC you want to lock?. Human: 10 Bot: How much contract options you want ?. Human: 5  Human:{input} AI Bot:"   
-    //     let reqPrompt = PromptTemplate.fromTemplate(template)
-    //     convoChain = new ConversationChain({llm,prompt:reqPrompt,memeory:memeory1})
-    //     let result = await convoChain.call({input:"Hii"})
-    //     console.log("result",result)
-    //     console.log("result1",await convoChain.call({input:"Create market maker contract for BTC."}))
-    //     }
-    //     catch(error){
-
-    //     }
-    // }
 
     const handleInitChat = async(input,matching_result) =>{
         try{
             // let template = "You are a Crypto moneymaker contract creator bot and your name is AInstein, greet the user in a friendly manner.  Human:Hii  AI bot:Hello! Welcome to Money Maker Bot. I'm here to help you create your contract. Please provide valid answers to the questions below.  Human:yes,I want to create the contract. AI bot:Please provide valid answers to below questions. Human:{input} AI Bot:"   
             if(matching_result){
-                console.log("log13",matching_result[0].pageContent)
+                // console.log("log13",matching_result[0].pageContent)
                 let template = `You are a Crypto moneymaker contract creator bot and your name is AInstein, ask the user what you can do today for him and after that give answers to the user question in friendly manner. ${matching_result[0].pageContent}   Human:{input} Bot:`                   
             let reqPrompt = PromptTemplate.fromTemplate(template)
             convoChain = new ConversationChain({llm,prompt:reqPrompt,memeory:memeory1})
@@ -473,37 +373,36 @@ export default function Home(){
             }
             else{
 
-                if(questions[promptFormatterCount+1].que.includes('How much quantity')){
-                    tempChats= [...tempChats,{text:`How much quantity of ${contractCurrency} you want to lock?`,role:'assistant',property:'',params:questions[promptFormatterCount+1].params}]
-                }
-                else{
-                    tempChats= [...tempChats,{text:questions[promptFormatterCount+1].que,role:'assistant',property:'',params:questions[promptFormatterCount+1].params}]
-                }
-                setChats(tempChats)  
-                setPromptFormatterCount(promptFormatterCount+1)
-                setPromptInputs(()=>[...contractCreationPropmptInputs,userInput])
-                if(promptFormatterCount+1 === questions.length-1){
-                    setPromptManageMode(false)
-                    setPromptInputs(()=>[...contractCreationPropmptInputs,userInput])
-                }   
+                // if(questions[promptFormatterCount+1].que.includes('How much quantity')){
+                //     tempChats= [...tempChats,{text:`How much quantity of ${contractCurrency} you want to lock?`,role:'assistant',property:'',params:questions[promptFormatterCount+1].params}]
+                // }
+                // else{
+                //     tempChats= [...tempChats,{text:questions[promptFormatterCount+1].que,role:'assistant',property:'',params:questions[promptFormatterCount+1].params}]
+                // }
+                // setChats(tempChats)  
+                // setPromptFormatterCount(promptFormatterCount+1)
+                // setPromptInputs(()=>[...contractCreationPropmptInputs,userInput])
+                // if(promptFormatterCount+1 === questions.length-1){
+                //     setPromptManageMode(false)
+                //     setPromptInputs(()=>[...contractCreationPropmptInputs,userInput])
+                // } 
+                
+                handleContractFormConversation(userInput,tempChats)
             }
 
          } 
          else if(initPhase){
-            // let result = await handleInitChat(userInput)
-            // console.log("log7.5",result)
-            // tempChats.push({text:result.response,role:'assistant',property:'' })
-            // setChats(tempChats)
             let givenInput = userInput.toLocaleLowerCase()
-                if((givenInput.includes('money maker') || givenInput.includes('moneymaker')) && givenInput.includes('create')){
+                if((givenInput.includes('money maker') || givenInput.includes('moneymaker')) && (givenInput.includes('create') || givenInput.includes('generate')) ){
                     if(givenInput.includes('eth') || givenInput.includes('ethereum') || givenInput.includes('eth')){
                         setContractCurrency('ETH')
                     }
                     else{
                         setContractCurrency('BTC')
                     }
-                    tempChats.push({text:"Sure",role:'assistant',property:'',params:null},{text:questions[promptFormatterCount].que,role:'assistant',property:'',params:null})
+                    tempChats.push({text:"Sure",role:'assistant',property:'',params:null})
                     setChats(tempChats)   
+                    handleContractFormConversation('No data available.',tempChats)
                     setInitphase(false)
                     setPromptManageMode(true)    
                 }
