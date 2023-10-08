@@ -1,9 +1,6 @@
 [
 	{
 		"id" : 1,
-		"status" : "inProcess",
-		"createdAt" : "2023-09-06 13:43:14",
-		"updatedAt" : "2023-09-06 13:43:14",
 		"contractAddress" : null,
 		"strikePrice" : 45000,
 		"premium" : 500,
@@ -12,9 +9,6 @@
 	},
 	{
 		"id" : 2,
-		"status" : "inProcess",
-		"createdAt" : "2023-09-06 15:30:03",
-		"updatedAt" : "2023-09-06 15:30:03",
 		"contractAddress" : null,
 		"strikePrice" : 45000,
 		"premium" : 500,

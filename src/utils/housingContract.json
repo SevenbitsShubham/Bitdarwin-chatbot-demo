@@ -1,0 +1,13 @@
+[
+	{
+		"id" : 1,
+		"title" : "Rental Contract",
+		"buyer" : "Jessy Pinkman",
+		"seller" : "Walter White",
+		"governingLaw" : "State of Florida",
+		"propertyAddress" : "House No 23, Florida,USA",
+		"sellingPrice" : 500000,
+        "terms":"Timely payemnt is required.",
+        "expirationDate": "2022-01-01 00:00:00"
+	}
+]
