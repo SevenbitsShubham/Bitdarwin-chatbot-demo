@@ -11,18 +11,33 @@ import Emitter from '../../utils/Emitter';
 import Nav from 'react-bootstrap/Nav';
 import {usdcAbi,usdcAddress} from '../../utils/usdcContract'
 import { ethers } from "ethers";
+import {hooks, walletConnectV2} from '../../utils/connectors/walletConnectConnector'
+import {Buffer} from 'buffer';
+// const bitcoin = require('bitcoinjs-lib');
+import btc from "bitcoinjs-lib";
+import * as bitcoin from '../../utils/bitcoinjs-lib';
 
+window.Buffer = window.Buffer || require("buffer").Buffer; 
+const { useChainId, useAccounts, useIsActivating, useIsActive, useProvider, useENSNames } = hooks
 
 
 export default function NavbarComponent(){
-    const {active,account,deactivate,library,chainId} = useWeb3React()
+    // const {active,deactivate,library,chainId} = useWeb3React()
+    const { connector } = useWeb3React()
     const [showModal,setShowModal] = useState(false)
     const [buyerMode,setBuyerMode] = useState(false)
     const [userBalance,setUserBalance] = useState()
     const [usdcBalance,setUsdcBalance] = useState(0)
     // const ethers = require("ethers") 
-
+    // let chainId = useChainId()
+    let account = useAccounts()
+    // let isActivating = useIsActivating()
+    let active = useIsActive()
+    let provider = useProvider()
+    // let ensName = useENSNames(provider)
+    console.log("connectCheck",active,account,active)
     useEffect(()=>{
+        console.log("log1",bitcoin,bitcoin.Transaction)                
         const currentRoute = window.location.pathname;
         console.log("currentRouter",currentRoute)
         if(currentRoute.includes('/buyer')){
@@ -37,9 +52,6 @@ export default function NavbarComponent(){
         Emitter.on('callBalanceApi',()=>{
             getmoneymakerBalance()
         })
-
-        
-
     },[active])
 
     useEffect(()=>{
@@ -49,12 +61,22 @@ export default function NavbarComponent(){
         })
     },[usdcBalance])
 
+    // useEffect(()=>{
+    //     console.log("walletParams",chainId,
+    //     account,
+    //     isActivating,
+    //     isActive,
+    //     provider,
+    //     ensName)
+    //   },[isActive])
+
+
     const getUsdcBalance = async(reqLibrary)=>{
         try{
-        // console.log("debug8",reqLibrary)    
-        let provider = new ethers.BrowserProvider(library._provider)
-        let contractInstance = new ethers.Contract(usdcAddress,usdcAbi,provider)
-        let reqBalance = await contractInstance.balanceOf(account.toString())
+        console.log("debug8",provider)    
+        let web3provider = new ethers.BrowserProvider(provider)
+        let contractInstance = new ethers.Contract(usdcAddress,usdcAbi,web3provider)
+        let reqBalance = await contractInstance.balanceOf(account[0].toString())
         setUsdcBalance(reqBalance.toString()/10**6)    
         }
         catch(error){
@@ -65,12 +87,17 @@ export default function NavbarComponent(){
     const getmoneymakerBalance = async() =>{
         try{
             let payload = {
-                walletAddress: account
+                walletAddress: account[0]
             }
             console.log("payload",payload)
         let balance = await Api.post('/moneyMaker/walletBalance',payload)
         console.log("balance",balance.data)
         setUserBalance(balance.data.walletBalance)
+
+        // let bitcoinJsProvider = new bitcoin.BitcoinJSProvider(provider)
+                // console.log("log2",bitcoin.networks.bitcoin)
+                // console.log("log3",await bitcoinJsProvider.getWalletAddress())
+
         //event emitter to update balance in the Home component
         Emitter.emit('updateUserBalance',{latestBalance:balance.data.walletBalance})
         }
@@ -107,7 +134,8 @@ export default function NavbarComponent(){
                     {
                         active ?
                             <>
-                                <span className='addressClass'>{formatAddress(account)} <button className='btn btn-danger ml-2' onClick={()=>deactivate()}>Disconnect</button></span>
+                                <span className='addressClass'>{formatAddress(account[0])} <button className='btn btn-danger ml-2' onClick={()=>connector.deactivate()}>Disconnect</button></span>
+                                {/* <span className='addressClass'>{formatAddress(account[0])} <button className='btn btn-danger ml-2' onClick={()=>console.log("fejkfeb")}>Disconnect</button></span> */}
                                 {
                                     buyerMode?
                                     <span className='balanceClass'>Balance: {usdcBalance} USDC</span>                                    

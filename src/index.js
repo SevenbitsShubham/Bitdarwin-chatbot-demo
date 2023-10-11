@@ -7,16 +7,20 @@ import { Web3Provider } from "@ethersproject/providers";
 import Web3 from 'web3';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import reportWebVitals from './reportWebVitals';
+import { hooks as metaMaskHooks, metaMask } from './utils/connectors/metamaskConnector'
+import { hooks as walletConnectV2Hooks, walletConnectV2 } from './utils/connectors/walletConnectConnector'
 
 function getLibrary(provider){
     // return new Web3Provider(provider)
     return new Web3(provider)
 }
 
+const connectors = [[walletConnectV2,walletConnectV2Hooks]]
+
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
   // <React.StrictMode>
-    <Web3ReactProvider getLibrary={getLibrary}>
+    <Web3ReactProvider connectors={connectors}>
       <App />
     </Web3ReactProvider>
   // </React.StrictMode>
