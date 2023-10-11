@@ -267,7 +267,7 @@ export default function BuyerPortal(){
                        {
                         !loading ?
                             myContractsList.length ?
-                            <MyContracts myContractsList={myContractsList}/>
+                            <MyContracts myContractsList={myContractsList} getUserContracts={getUserContracts}/>
                             :
                             <h5 className='text-center'>Currently requested contract is not availabel.</h5> 
                         :

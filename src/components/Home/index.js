@@ -81,6 +81,7 @@ export default function Home(){
     let chain
     let vectorStore
 
+    console.log("debug123",active)
     useEffect(()=>{
         setupInitConvoChain()
         let potentialQueries1= generateSqlQueries(table1,"MoneyMakerContract")
