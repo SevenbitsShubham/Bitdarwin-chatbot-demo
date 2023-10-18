@@ -1,3 +1,5 @@
+import Api from './Api';
+
 
 export function formatDateToDdMmYy() {
     const today = new Date();
@@ -7,3 +9,13 @@ export function formatDateToDdMmYy() {
   
     return `${year}-${month}-${day}`;
   }
+
+export const handleUserRegistration = async(walletAddress) =>{
+    try{
+        await Api.post('/user/checkRegistration',{walletAddress})
+    }
+    catch(error){
+        console.log(error)
+        alert(error.message)
+    }
+}

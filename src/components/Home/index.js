@@ -17,7 +17,8 @@ import table2 from '../../utils/housingContract.json';
 import Emitter from '../../utils/Emitter';
 import {askForReqFields,filterResponse} from '../../utils/langchainHelpers/moneyMakerQuestionFormHelper'
 import {askHousingContractReqFields,filterHousingContractFormResponse} from '../../utils/langchainHelpers/housingContractQuestionFormHelper'
-import {formatDateToDdMmYy} from '../../utils/helper'
+import {formatDateToDdMmYy,handleUserRegistration} from '../../utils/helper'
+import AccountSection from './AccountSection'
 
 /////////////////////// enable strictmode in react ///////////////////////////
 export default function Home(){
@@ -51,7 +52,7 @@ export default function Home(){
     //     "periodInMonth": 4,
     //     "needForstrikePriceAssistanceUsingARIMA": "yes",
     //     "strikePriceInUsd": 35000,
-    //     "tokenQuantity": 0.0001,
+    //     "tokenQuantity": null,
     //     "noOfContracts": 2
     // })
     const [currentContractParams,setcurrentContractParams] = useState({currency:null,periodInMonth:null,needForstrikePriceAssistanceUsingARIMA:null,strikePriceInUsd:null,tokenQuantity:null,noOfContracts:null})
@@ -69,7 +70,7 @@ export default function Home(){
     const [offTxForm,setOffTxForm] = useState({userWalletAddress:null,userTxHash:null,userAssetQuantity:null})
     const [moneymakerMode,setMoneyMakerMode] = useState(0)
     const [housingContractMode,setHousingContractMode] = useState(0)
-
+    const [accountSectionMode,setAccountSectionMode] = useState(false)
 
     const inputRef = useRef()
     let convoChain 
@@ -86,7 +87,6 @@ export default function Home(){
         setupInitConvoChain()
         let potentialQueries1= generateSqlQueries(table1,"MoneyMakerContract")
         let potentialQueries2= generateSqlQueries(table2,"HousingContract")
-        console.log("queryLOg",potentialQueries1,potentialQueries2)
         manageVectorSTorage([...potentialQueries1,...potentialQueries2])
         initBot()
     },[])
@@ -95,14 +95,20 @@ export default function Home(){
         Emitter.on('updateUserBalance',(data)=>{
             setBalance(data.latestBalance)
         })
+        Emitter.on('setAccountSection',(data)=>{
+            console.log("log30",data)
+            setAccountSectionMode(data.status)
+        })
     },[loading])
 
     useEffect(()=>{
         if(library){
             setProvider(new ethers.BrowserProvider(library._provider))
         }
+        if(active){
+            handleUserRegistration(account)
+        }
     },[active])
-
 
     const handleContractFormConversation = async(inputText='No data available.',tempChats=[...chats]) =>{
         try{
@@ -119,15 +125,17 @@ export default function Home(){
                 }
 
                 if((chats[chats.length-1].text.includes('quantity') && chats[chats.length-1].text.includes('token'))){                   
-                        alert("We are transferring the funds to the pool wallet this may take some time.Thanks")
-                        let txData = await handleAssetQuantityTransfer(inputText)               
+                        alert("Platform fees of 0.0002BTC will be additionally charged from the wallet.We are transferring the funds to the pool wallet this may take some time.Thanks")
+                        let txData = await handleAssetQuantityTransfer(inputText)   
+                        console.log("debug21",txData)            
                         setLoading(false)
                         if(txData.status === "failed"){
                             handleExtPoolTxValidation(inputText,txData.poolAddress)
+
                             setTempQuantity(inputText)
                             return
                         }   
-                        setPoolTxHash(txData.TransactionHash)
+                        
                         setLoading(true)
 
                     inputText = 'quantity: '+inputText 
@@ -223,11 +231,11 @@ export default function Home(){
             let payload = {
                 "walletAddress":account,
                 "currency":currentContractParams.currency,
-                "quantity":quantity
+                "quantity":parseFloat(quantity) 
             }    
             let result= await Api.post('/moneyMaker/lockAssets',payload)
-            alert(`${payload.currency} has been locked to pool wallet successfully.\nTransaction Hash: ${result.data.TransactionHash}`)
-            console.log("log7",result)      
+            alert(`${quantity} ${payload.currency} has been locked to pool wallet successfully.\nTransaction Hash: ${result.data.TransactionHash}`)
+            setPoolTxHash(result.data.TransactionHash)    
             Emitter.emit('callBalanceApi',null)  
             setProcessing(false)
             return {status:"success",poolAddress:null}
@@ -235,7 +243,7 @@ export default function Home(){
         catch(error){
             setProcessing(false)
             console.log("error",error)
-            if(error.response?.data?.poolwalletAddress){
+            if(error.response?.data === 'Low wallet balance.'){
                 return {status:"failed",poolAddress:error.response.data.poolwalletAddress}
                 // handleExtPoolTxValidation(quantity,error.response.data.poolwalletAddress)
             }
@@ -244,7 +252,7 @@ export default function Home(){
 
     const handleExtPoolTxValidation = (quantity,poolAddress) =>{
         try{
-           setChats(()=>[...chats,{text:quantity,role:'user',property:'' } ,{text:'Your wallet has lower balance than the entered amount,please scan the QR code containing Pool Address and transfer the required assets to the pool wallet.',role:'assistant',property:'' },{text:'',role:'assistant',property:'offTxMode' } ])    
+           setChats(()=>[...chats,{text:quantity,role:'user',property:'' } ,{text:'Your wallet has lower balance than the entered amount,please go to Account Settings and transfer and validate the transaction from there.',role:'assistant',property:'' },{text:'',role:'assistant',property:'offTxMode' } ])    
            setLockPoolAddresss(poolAddress)
            setLockBalanceMode(false)
            setVerifyLockBalanceMode(true)
@@ -638,7 +646,6 @@ export default function Home(){
         let message = {query:sqlQuery,hex:sqlQueryHex}
         let reqSignature = await signer.signMessage(JSON.stringify(message)) 
         setSignature(reqSignature)
-        console.log("lobraryLog",signer,reqSignature)
         let payload
         if(!housingContractMode){
              payload = {
@@ -718,43 +725,50 @@ export default function Home(){
        try{ 
         e.preventDefault()
         setProcessing(true)
-           if(!offTxForm.userWalletAddress){
-                alert("Please enter Wallet Address.")
-           }         
-
            if(!offTxForm.userTxHash){
-                alert("Please enter transaction hash.")
-           }
-
-           if(!offTxForm.userAssetQuantity){
-                alert("Please enter quantity .")
+               return alert("Please enter transaction hash.")
            }
 
            let payload = {
-            walletAddress:account,
-            userWalletAddress:offTxForm.userWalletAddress,
+            userWalletAddress:account,
             txHash:offTxForm.userTxHash,
-            quantity:offTxForm.userAssetQuantity
            }
 
-        //    console.log("checker")
-           let response = await Api.post('/moneyMaker/validateOffPortalLockTx',payload)
+           console.log("debug22",payload)
+
+           let response = await Api.post('/moneyMaker/confirmUserTx', {
+            userWalletAddress:account,
+            txHash:offTxForm.userTxHash,
+           })
            console.log("debug20",response)
            setPoolTxHash(offTxForm.userTxHash)
            setVerifyLockBalanceMode(false)
+           
+           alert("Your transaction is validated successfully.Currently we are despositing the platform fee 0.0002 BTC.Please Wait till transaction is processing.")
+           await Api.post('/moneyMaker/transferFees', {
+            userWalletAddress:account,
+           })   
+           alert("0.0002 BTC fee is successfully deducted from your wallet as a platform fee.")
+           setProcessing(false)         
            handleContractFormConversation(`quantity: ${tempQuantity}`)
-           setProcessing(false)
-           alert("Your transaction is validated successfully.")
+
        }
        catch(error){
-         console.log("error",error)
-         setProcessing(true)
-         alert(error.message)
+         console.log("error",error,account)
+         if(error.response.data){
+            if(error.response.data.includes('validate the tx')){
+                  setChats(()=>[...chats,{text:'Please first validate the transaction from Account Settings.And Try Again ',role:'assistant',property:''}])  
+            }    
+         }
+             setProcessing(false)
+        //  alert(error.message)
        } 
     }
 
     return(
         <>
+        {
+          !accountSectionMode ?  
         <div className='container py-5'>
             {
                 !active &&
@@ -796,36 +810,20 @@ export default function Home(){
                                                         chat.property === "plot" ?
                                                             <div className='plotSection' key={i}>
                                                                 <p >
-                                                                    <img src={chat.text} alt='' height={280}/>
+                                                                      <img src={chat.text} alt='' height={280}/>
                                                                     {/* <span className='chat-text-modifier p-2'>{chat.text}</span>  */}
                                                                 </p>
                                                             </div>
                                                         :
                                                         chat.property === "offTxMode" ?
-                                                        <>
-                                                        <div className='chatSection-assistance-contractOp '>
-                                                                <div className=' chat-text-modifier-cover'> 
-                                                                {/* <div className='chat-text-modifier'> */}
-                                                                <QRCodeCanvas 
-                                                                        value={lockPoolAddresss}
-                                                                        size={128}
-                                                                        bgColor="#FFFFFF"
-                                                                        fgColor="#000000"
-                                                                        style={{ height: "auto", maxWidth:"100%", width:"100%", padding:"15px" }}
-                                                                        includeMargin={true}
-                                                                />    
-                                                                {/* </div>  */}
-                                                                </div>
-                                                        </div>    
+                                                        <>   
                                                         <div className='chatSection-assistance-contractOp '>
                                                                 <div className=' chat-text-modifier-cover'> 
                                                                 <div className='chat-text-modifier'>
-                                                                    <p>Kindly provide transaction details below so that we can process ahead:</p>   
+                                                                    <p>Kindly provide transaction hash of the tranaction after completing the validating transaction from Account Settings:</p>   
                                                                     <div >
                                                                     <form>
-                                                                        <Form.Control size="lg" className='mt-3' type="text" placeholder="Enter user wallet address." onChange={(e)=>setOffTxForm((data)=>({...data,userWalletAddress:e.target.value}))}  />   
                                                                         <Form.Control size="lg" className='mt-3' type="text" placeholder="Enter transaction hash." onChange={(e)=>setOffTxForm((data)=>({...data,userTxHash:e.target.value}))}  />  
-                                                                        <Form.Control size="lg" className='mt-3' type="text" placeholder="Enter Quantity." onChange={(e)=>setOffTxForm((data)=>({...data,userAssetQuantity:e.target.value}))}  />   
                                                                         <button className='btn btn-primary mt-3' onClick={(e)=>handleTxForm(e)}>Proceed</button>        
                                                                     </form>
                                                                     </div>
@@ -875,6 +873,9 @@ export default function Home(){
                 </div>
             </div>
         </div>
+        :
+           <AccountSection account={account}/>             
+        }
         </>
     )
 }

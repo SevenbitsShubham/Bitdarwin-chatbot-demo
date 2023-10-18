@@ -9,6 +9,7 @@ import MyContracts from './myContracts'
 import ContractDetailModal from './ContractDetailModal'
 import Table from 'react-bootstrap/Table';
 import {usdcAbi,usdcAddress} from '../../utils/usdcContract'
+import {handleUserRegistration} from '../../utils/helper'
 import { ethers } from "ethers";
 
 export default function BuyerPortal(){
@@ -39,27 +40,8 @@ export default function BuyerPortal(){
 
         let provider
         if(active){
+            handleUserRegistration(account)
             initUsdcContract()
-            // console.log("debug3",library._provider)
-            // provider = new ethers.BrowserProvider(library._provider)
-            // console.log("debug4",provider)
-            // // let contractInstance = new ethers.Contract(usdcAddress,usdcAbi,provider)
-            // // let signer = await provider.getSigner()
-            // let contractInstance = new ethers.Contract(usdcAddress,usdcAbi,provider)
-            // console.log("debug5",contractInstance,account)
-            // setUsdcInstance(contractInstance)
-            // let reqBalance  
-            // getBalance()
-            // async function getBalance(){
-            //     console.log("debug5.5",await provider.getSigner())
-            //      reqBalance = await contractInstance.balanceOf(account.toString())
-            //      console.log("debug6",reqBalance)
-            //      let signer = await provider.getSigner()
-                //  let contractInstance1 = new ethers.Contract(usdcAddress,usdcAbi,signer)
-                //  await contractInstance1.transfer('0x1019df527FAC955B09105c72a60C013bAC7430C5','1000000')
-            //      console.log()
-            //     //  let tokenAmount = await contractInstance.transfer('0x1019df527FAC955B09105c72a60C013bAC7430C5', 1000000)                 
-            // }
         }
     
         

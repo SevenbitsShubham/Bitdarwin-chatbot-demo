@@ -20,6 +20,7 @@ export default function NavbarComponent(){
     const [buyerMode,setBuyerMode] = useState(false)
     const [userBalance,setUserBalance] = useState()
     const [usdcBalance,setUsdcBalance] = useState(0)
+    const [accountSectionMode,setAccountSectionMode] = useState(false)
     // const ethers = require("ethers") 
 
     useEffect(()=>{
@@ -79,6 +80,11 @@ export default function NavbarComponent(){
         }
     }
 
+    const handleAccountSection = (status) =>{
+        setAccountSectionMode(status) 
+        Emitter.emit('setAccountSection',{status})
+    }
+
     return(
         <>
         <Navbar bg="dark">
@@ -107,12 +113,20 @@ export default function NavbarComponent(){
                     {
                         active ?
                             <>
-                                <span className='addressClass'>{formatAddress(account)} <button className='btn btn-danger ml-2' onClick={()=>deactivate()}>Disconnect</button></span>
+                                <span className='addressClass '>{formatAddress(account)} <button className='btn btn-danger ml-2 navMargin' onClick={()=>deactivate()}>Disconnect</button></span>
                                 {
                                     buyerMode?
                                     <span className='balanceClass'>Balance: {usdcBalance} USDC</span>                                    
                                     :
-                                    <span className='balanceClass'>Balance: {userBalance} BTC</span>                                    
+                                    <>
+                                        <span className='balanceClass'>Balance: {userBalance} BTC</span>   
+                                        {
+                                            !accountSectionMode ?
+                                              <button className='btn btn-primary navMargin' onClick={()=>handleAccountSection(true)}>Account Settings</button>
+                                            :
+                                            <button className='btn btn-primary navMargin' onClick={()=>handleAccountSection(false)}>Back To Home</button>
+                                        }                                 
+                                    </>
                                 }
                             </>
                                 :
