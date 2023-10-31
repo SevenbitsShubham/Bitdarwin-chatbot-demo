@@ -19,6 +19,7 @@ import {askForReqFields,filterResponse} from '../../utils/langchainHelpers/money
 import {askHousingContractReqFields,filterHousingContractFormResponse} from '../../utils/langchainHelpers/housingContractQuestionFormHelper'
 import {formatDateToDdMmYy,handleUserRegistration} from '../../utils/helper'
 import AccountSection from './AccountSection'
+import {Buffer} from 'buffer';
 
 /////////////////////// enable strictmode in react ///////////////////////////
 export default function Home(){
