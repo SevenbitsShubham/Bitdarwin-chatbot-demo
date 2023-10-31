@@ -154,7 +154,7 @@ export default function Home(){
             setcurrentContractParams(updatedDetails)
             console.log("remianingDetails",remianingDetails,"updatedDetails",updatedDetails)
             console.log("log21", isPricePlotIsrequested,updatedDetails.needForstrikePriceAssistanceUsingARIMA)
-            if(updatedDetails.needForstrikePriceAssistanceUsingARIMA=== "yes" || updatedDetails.needForstrikePriceAssistanceUsingARIMA=== "required"){
+            if(isPricePlotIsrequested && (updatedDetails.needForstrikePriceAssistanceUsingARIMA=== "yes" || updatedDetails.needForstrikePriceAssistanceUsingARIMA=== "required")){
                 let plotUrl= await handlePricePrediction()
                 tempChats= [...tempChats,{text:plotUrl,role:'assistant',property:'plot',params:null }]
                 setIsPricePlotIsrequested(false)
