@@ -7,7 +7,7 @@ export function formatDateToDdMmYy() {
     const month = String(today.getMonth() + 1).padStart(2, '0'); // Get month (0-11) and add 1, then pad with leading zero if needed
     const year = String(today.getFullYear()).slice(-2); // Get the last two digits of the year
   
-    return `${year}-${month}-${day}`;
+    return `${day}-${month}-${year}`;
   }
 
 export const handleUserRegistration = async(walletAddress) =>{

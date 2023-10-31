@@ -52,7 +52,7 @@ export default function Home(){
     //     "periodInMonth": 4,
     //     "needForstrikePriceAssistanceUsingARIMA": "yes",
     //     "strikePriceInUsd": 35000,
-    //     "tokenQuantity": null,
+    //     "tokenQuantity": 0.0003,
     //     "noOfContracts": 2
     // })
     const [currentContractParams,setcurrentContractParams] = useState({currency:null,periodInMonth:null,needForstrikePriceAssistanceUsingARIMA:null,strikePriceInUsd:null,tokenQuantity:null,noOfContracts:null})
@@ -89,6 +89,7 @@ export default function Home(){
         let potentialQueries2= generateSqlQueries(table2,"HousingContract")
         manageVectorSTorage([...potentialQueries1,...potentialQueries2])
         initBot()
+        // handleOptionGeneration()
     },[])
 
     useEffect(()=>{
@@ -115,7 +116,6 @@ export default function Home(){
             setLoading(true)
             //initialized tagging chain
             if(chats.length){
-                console.log("log19",chats)
                 if(chats[chats.length-1].text.includes('period')){
                     inputText = inputText + 'months'
                 }
@@ -141,6 +141,10 @@ export default function Home(){
                     inputText = 'quantity: '+inputText 
                 }
 
+                if(chats[chats.length-1].text.includes('ARIMA') ){
+                    inputText = 'needForstrikePriceAssistanceUsingARIMA: '+inputText.toLowerCase() 
+                }
+
                 if(chats[chats.length-1].text.includes('number') && chats[chats.length-1].text.includes('call option contracts')){
                     inputText = 'number of call option contract: '+inputText 
                 }
@@ -150,7 +154,7 @@ export default function Home(){
             setcurrentContractParams(updatedDetails)
             console.log("remianingDetails",remianingDetails,"updatedDetails",updatedDetails)
             console.log("log21", isPricePlotIsrequested,updatedDetails.needForstrikePriceAssistanceUsingARIMA)
-            if(isPricePlotIsrequested && updatedDetails.needForstrikePriceAssistanceUsingARIMA=== "yes"){
+            if(updatedDetails.needForstrikePriceAssistanceUsingARIMA=== "yes" || updatedDetails.needForstrikePriceAssistanceUsingARIMA=== "required"){
                 let plotUrl= await handlePricePrediction()
                 tempChats= [...tempChats,{text:plotUrl,role:'assistant',property:'plot',params:null }]
                 setIsPricePlotIsrequested(false)
@@ -522,8 +526,7 @@ export default function Home(){
         let formatInstructions = parser.getFormatInstructions()
 
         // let mainQuery = `Answer the user's question as best you can:\n{format_instructions}\n If bitcoin price is $10000 , the prediction for bitcoin price in the next {predictionMonths} months to hit $ {predictionPrice} . Please generate call option data for me strike , premium , open int, expiration date so I can create contracts.Also generate {contractCounts} contracts data for this scenario and think about me as the money maker and I have {userBalance} Bitcoins in total.`        
-        let mainQuery = `Answer the user's question as best you can:\n{format_instructions}\n If bitcoin price is $10000 , the call options for bitcoin price in the next {predictionMonths} months from today:{todayDate} to hit $ {predictionPrice} . Please generate call option data for me strike , premium , open int, expiration date so I can create contracts.Also generate {contractCounts} contracts data for this scenario and think about me as the money maker and I have {userBalance} Bitcoins in total.\n
-         Also expiration date of call options should be {predictionMonths} months from today if it is in next years then also provide it in respective year.And please provide expiration date in call option in YYYY-mm-dd format.Premium value should be a nearest higher whole number near decimal value..`        
+        let mainQuery = `Answer the user's question as best you can:\n{format_instructions}\n The call options for bitcoin price in the next {predictionMonths} months from today:{todayDate} to hit $ {predictionPrice} . Please generate call option data for me strike , premium , open interest, expiration date so I can create contracts.Also generate {contractCounts} contracts options data for this scenario and consider me as the money maker and I have {userBalance} Bitcoins in total.\nAlso expiration date of call options should be {predictionMonths} months from {todayDate}, if it is in next years then also provide it in respective year.And please provide expiration date in call option in YYYY-MM-DD format.Premium value should be a nearest higher whole number near decimal value..`        
 
 
     //prompt initialization    
@@ -533,9 +536,19 @@ export default function Home(){
         partialVariables:{format_instructions:formatInstructions}
        })
 
+    // let samplePrompt = await reqPrompt.format({
+    //     predictionMonths:currentContractParams.periodInMonth,
+    //     todayDate:formatDateToDdMmYy(),
+    //     predictionPrice:currentContractParams.strikePriceInUsd,
+    //     contractCounts:currentContractParams.noOfContracts,
+    //     userBalance:currentContractParams.tokenQuantity
+    // })  
+
+    // console.log("log60",samplePrompt)
+
     chain = new LLMChain({llm,prompt:reqPrompt,memory})
 
-       let result = await chain.call({'predictionMonths':`${currentContractParams.periodInMonth}`,'todayDate':formatDateToDdMmYy(),'predictionPrice':`${currentContractParams.strikePriceInUsd}`,'contractCounts':`${currentContractParams.noOfContracts}`,'userBalance':`${currentContractParams.noOfContracts}`})
+       let result = await chain.call({'predictionMonths':`${currentContractParams.periodInMonth}`,'todayDate':formatDateToDdMmYy(),'predictionPrice':`${currentContractParams.strikePriceInUsd}`,'contractCounts':`${currentContractParams.noOfContracts}`,'userBalance':`${currentContractParams.tokenQuantity}`})
     //    console.log("result",result)
        let finalResult = JSON.parse(result.text)
        console.log(JSON.parse(result.text))
@@ -767,14 +780,15 @@ export default function Home(){
 
     return(
         <>
+        <div className='mainDiv'>
         {
           !accountSectionMode ?  
-        <div className='container py-5'>
+        <div className='container py-5 '>
             {
                 !active &&
-                  <h4 className='text-center text-danger mt-2'>AInstein wants you to Connect your wallet!</h4>
+                  <h3 className='text-center text-danger '>AInstein wants you to Connect your wallet!</h3>
             }
-            <div className='offset-3 mainDiv'>
+            <div className='offset-3 '>
                 <div className='col-8 chatHistory'>
                      <div className='chatHistoryInterface'>
                      <div class="fix"></div>
@@ -846,14 +860,14 @@ export default function Home(){
                         {
                             loading &&
                             <div className='chatSection-assistance'>
-                                            <p className='p-4'> <span className='p-2'>...Loading...</span> </p>
+                                            <p className='p-4 text-white'> <span className='p-2'>...Loading...</span> </p>
                             </div>
                         }
 
                         {
                             processing &&
                             <div className='chatSection-assistance'>
-                                            <p className='p-4'> <span className='p-2'>...Processing...</span> </p>
+                                            <p className='p-4 text-white'> <span className='p-2'>...Processing...</span> </p>
                             </div>
                         }
 
@@ -868,7 +882,7 @@ export default function Home(){
                     <div className='col-3'>
                         {/* <Button variant="primary">Enter</Button> */}
                         {/* <button className='btn btn-primary' onClick={handleUserInput} disabled={!active}>Enter</button> */}
-                        <button className='btn btn-primary' onClick={()=>!loading?handleUserInput():''} disabled={contractMode} >Enter</button>
+                        <button className='btn btn-schema' onClick={()=>!loading?handleUserInput():''} disabled={contractMode|| !active} >Enter</button>
                     </div>
                 </div>
             </div>
@@ -876,6 +890,7 @@ export default function Home(){
         :
            <AccountSection account={account}/>             
         }
+        </div>
         </>
     )
 }

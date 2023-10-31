@@ -2,3 +2,37 @@
 .modal-details-row{
     margin-left: 0.5rem;
 }
+
+.header-schema{
+    font-family: 'Poppins', sans-serif;
+    color: #FFFFFF;
+}
+
+.main2Div{
+    background-color: #030B15;
+}
+
+.table-schema{
+    /* color: #FFFFFF !important;  */
+    font-size: 1.1rem !important;
+    font-weight: 3500;
+    --bs-table-color: #FFFFFF !important;
+    --bs-table-bg: #030B15 !important;
+}
+
+.table-border-bottom{
+    border-bottom: 2px solid rgba(255, 252, 252, 0.096);
+    font-family: 'Outfit', sans-serif !important;
+    /* font-size: 1rem !important;
+    font-weight: 400 !important;  */
+}
+
+.modal-header-schema{
+    background: #0B1D33 !important;
+}
+
+.modal-schema{
+    font-family: 'Outfit', sans-serif !important;
+    font-size: 1.1rem !important;
+    font-weight: 370 !important; 
+}

@@ -1,7 +1,8 @@
 import React,{useState} from 'react'
 import ContractDetailModal from './ContractDetailModal'
 import ContractResellModal from './ContractResellModal'
-
+import Table from 'react-bootstrap/Table';
+import './index.css'
 
 export default function MyContracts(props){
     const [viewDetailsModalShow,setViewDetailsModalShow] = useState(false)
@@ -21,7 +22,7 @@ export default function MyContracts(props){
     
     return(
         <>
-        <table class="table">
+        <Table responsive borderless className=" table-schema bg-dark">
                         <thead>
                             <tr>
                             <th scope="col">Sr. No.</th>
@@ -59,7 +60,7 @@ export default function MyContracts(props){
                             
                         </tbody>
 
-            </table>    
+            </Table>    
             <ContractDetailModal viewDetailsModalShow={viewDetailsModalShow} setViewDetailsModalShow={setViewDetailsModalShow} viewContractDetails={viewContractDetails}/>
             <ContractResellModal resellModal={resellModal} setResellModal={setResellModal} viewContractDetails={viewContractDetails} getUserContracts={props.getUserContracts}/>
 

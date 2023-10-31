@@ -37,9 +37,10 @@ export default function ContractResellModal(props){
                 size="lg"
                 aria-labelledby="contained-modal-title-vcenter"
                 centered
+                className='modal-schema'
                 >
-                <Modal.Header closeButton>
-                    <Modal.Title id="contained-modal-title-vcenter">
+                <Modal.Header closeButton className='modal-header-schema'>
+                    <Modal.Title id="contained-modal-title-vcenter" className='text-white'> 
                     Re-Sell Contract
                     </Modal.Title>
                 </Modal.Header> 

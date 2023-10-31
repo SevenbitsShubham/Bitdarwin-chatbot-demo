@@ -33,8 +33,8 @@ export default function WalletConnectionModal(props){
       aria-labelledby="contained-modal-title-vcenter"
       centered
     >
-      <Modal.Header closeButton>
-        <Modal.Title id="contained-modal-title-vcenter">
+      <Modal.Header closeButton className='modal-header-schema'>
+        <Modal.Title id="contained-modal-title-vcenter" className='text-white'>
           Connect Wallet
         </Modal.Title>
       </Modal.Header>

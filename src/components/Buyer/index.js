@@ -11,6 +11,7 @@ import Table from 'react-bootstrap/Table';
 import {usdcAbi,usdcAddress} from '../../utils/usdcContract'
 import {handleUserRegistration} from '../../utils/helper'
 import { ethers } from "ethers";
+import './index.css'
 
 export default function BuyerPortal(){
     const [contractList,setContractList] = useState([])
@@ -157,11 +158,12 @@ export default function BuyerPortal(){
 
     return(
         <>
+        <div className='main2Div'>
            <div className='container'> 
            {
             marketplaceMode ?
            <div>
-            <h3 className='text-center mt-3'>Explorer</h3>
+            <h2 className='text-center pt-3 header-schema'>Explorer</h2>
 
             {
                     !active ?
@@ -175,14 +177,11 @@ export default function BuyerPortal(){
                             <option value='HousingContract'>HousingContract</option>
                         </Form.Select>
                         </div>
-                      <button type="submit" class="btn btn-primary mb-2" onClick={()=>getContractList()}>Filter</button>
+                      <button type="submit" class="btn mb-2 btn-schema" onClick={()=>getContractList()}>Filter</button>
                       </div>  
-                       {
-                        console.log("debug1",loading,contractList,refreshCount)
-                       } 
-                               
-                      <table class="table">
-                        <thead>
+                      
+                      <Table responsive borderless className=" table-schema bg-dark">
+                        <thead className='table-border-bottom'>
                             <tr>
                             <th scope="col">Sr. No.</th>
                             <th scope="col">Contract Type</th>
@@ -218,20 +217,20 @@ export default function BuyerPortal(){
                             
                         </tbody>
                         
-                        </table>
+                        </Table>
                     </>         
             }    
 
 
             {
                             !contractList.length &&
-                            <h5 className='text-center'>Currently No contract is available for sell.</h5> 
+                            <h5 className='text-center header-schema'>Currently No contract is available for sell.</h5> 
                         }
             </div>
 
             :
                 <div>
-                    <h3 className='text-center mt-3'>My Contracts</h3>
+                    <h3 className='text-center header-schema pt-3'>My Contracts</h3>
 
                       <div>
                       <div class="d-flex justify-content-center">
@@ -242,7 +241,7 @@ export default function BuyerPortal(){
                             <option value='inactive'>Inactive Contracts</option>
                         </Form.Select>
                         </div>
-                      <button type="submit" class="btn btn-primary mb-2" onClick={()=>getUserContracts()}>Filter</button>
+                      <button type="submit" class="btn btn-schema mb-2" onClick={()=>getUserContracts()}>Filter</button>
                       </div>  
                         </div>  
 
@@ -251,7 +250,7 @@ export default function BuyerPortal(){
                             myContractsList.length ?
                             <MyContracts myContractsList={myContractsList} getUserContracts={getUserContracts}/>
                             :
-                            <h5 className='text-center'>Currently requested contract is not availabel.</h5> 
+                            <h5 className='text-center header-schema'>Currently requested contract is not availabel.</h5> 
                         :
                         null    
                        } 
@@ -263,9 +262,10 @@ export default function BuyerPortal(){
                 size="lg"
                 aria-labelledby="contained-modal-title-vcenter"
                 centered
+                className='modal-schema'
                 >
-                <Modal.Header closeButton>
-                    <Modal.Title id="contained-modal-title-vcenter">
+                <Modal.Header closeButton className='modal-header-schema'>
+                    <Modal.Title id="contained-modal-title-vcenter" className='text-white'>
                     Buy Contract
                     </Modal.Title>
                 </Modal.Header>
@@ -286,6 +286,7 @@ export default function BuyerPortal(){
                 </Modal>
                 <ContractDetailModal viewDetailsModalShow={viewDetailsModalShow} setViewDetailsModalShow={setViewDetailsModalShow} viewContractDetails={viewContractDetails}/>
             </div>    
+            </div> 
         </>
     )
 }

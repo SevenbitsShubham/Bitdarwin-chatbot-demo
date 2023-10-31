@@ -71,7 +71,7 @@ export default function AccountSection(props){
            {
            !loading  ?
            <div>
-                <h3 className='text-center'>Account Settings</h3>
+                <h3 className='text-center header-schema'>Account Settings</h3>
                     <div className='d-flex justify-content-center'>
                             <QRCodeCanvas 
                                 value={poolAddress}
@@ -82,16 +82,16 @@ export default function AccountSection(props){
                                 includeMargin={true}
                         />
                     </div>  
-                    <h5 className='text-center'>Scan above QR code to get Pool Wallet Address.</h5>   
+                    <h5 className='text-center header-schema'>Scan above QR code to get Pool Wallet Address.</h5>   
                     <div className='d-flex justify-content-center mt-5'>
-                        <div className='chat-text-modifier'>
-                                <h6>Kindly provide transaction details below for transaction validation:</h6>   
+                        <div className='validation-schema'>
+                                <h6 className='header-schema'>Kindly provide transaction details below for transaction validation:</h6>   
                                     <div >
                                     <form>
                                         <Form.Control size="lg" className='mt-3' type="text" placeholder="Enter user wallet address." onChange={(e)=>setOffTxForm((data)=>({...data,userWalletAddress:e.target.value}))}  />   
                                         <Form.Control size="lg" className='mt-3' type="text" placeholder="Enter transaction hash." onChange={(e)=>setOffTxForm((data)=>({...data,userTxHash:e.target.value}))}  />  
                                         <Form.Control size="lg" className='mt-3' type="text" placeholder="Enter Quantity." onChange={(e)=>setOffTxForm((data)=>({...data,userAssetQuantity:e.target.value}))}  />   
-                                        <button className='btn btn-primary mt-3' onClick={(e)=>handleTxForm(e)}>Proceed</button>        
+                                        <button className='btn btn-primary mt-3 btn-schema' onClick={(e)=>handleTxForm(e)}>Proceed</button>        
                                     </form>
                                 </div>
                         </div>     

@@ -11,7 +11,7 @@ import Emitter from '../../utils/Emitter';
 import Nav from 'react-bootstrap/Nav';
 import {usdcAbi,usdcAddress} from '../../utils/usdcContract'
 import { ethers } from "ethers";
-
+import './index.css'
 
 
 export default function NavbarComponent(){
@@ -87,7 +87,7 @@ export default function NavbarComponent(){
 
     return(
         <>
-        <Navbar bg="dark">
+        <Navbar className='navbar-schema'>
             <Container>
                 {/* <Navbar.Brand href="#home">Navbar with text</Navbar.Brand> */}
                 <Navbar.Toggle />
@@ -102,8 +102,8 @@ export default function NavbarComponent(){
                                 <Navbar.Text className='text-white myCOntractClass'>
                                         
                                 </Navbar.Text> */}
-                                <Nav.Link className='text-white' onClick={()=>Emitter.emit('changeToMarketplace',null)}>Explorer</Nav.Link>
-                                <Nav.Link className='text-white myCOntractClass' onClick={()=>Emitter.emit('changeToMyContracts',null)}>MyContracts</Nav.Link>
+                                <Nav.Link className='text-white navbar-header-scheme' onClick={()=>Emitter.emit('changeToMarketplace',null)}>Explorer</Nav.Link>
+                                <Nav.Link className='text-white myCOntractClass navbar-header-scheme' onClick={()=>Emitter.emit('changeToMyContracts',null)}>MyContracts</Nav.Link>
                             </Navbar.Collapse>
                         </>
                         :
@@ -122,15 +122,15 @@ export default function NavbarComponent(){
                                         <span className='balanceClass'>Balance: {userBalance} BTC</span>   
                                         {
                                             !accountSectionMode ?
-                                              <button className='btn btn-primary navMargin' onClick={()=>handleAccountSection(true)}>Account Settings</button>
+                                              <button className='btn btn-schema navMargin' onClick={()=>handleAccountSection(true)}>Account Settings</button>
                                             :
-                                            <button className='btn btn-primary navMargin' onClick={()=>handleAccountSection(false)}>Back To Home</button>
+                                            <button className='btn btn-schema navMargin' onClick={()=>handleAccountSection(false)}>Back To Home</button>
                                         }                                 
                                     </>
                                 }
                             </>
                                 :
-                            <button className='btn btn-primary' onClick={()=>setShowModal(true)}>Connect Wallet</button>
+                            <button className='btn btn-schema' onClick={()=>setShowModal(true)}>Connect Wallet</button>
                     }
                     </Navbar.Collapse>        
                 
