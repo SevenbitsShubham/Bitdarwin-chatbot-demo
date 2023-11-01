@@ -17,7 +17,7 @@ export default function AccountSection(props){
     const getPoolWalletAddress = async() =>{
         try{
             setLoading(true)
-            let response = await Api.get('/moneyMaker/getPoolAddress') 
+            let response = await Api.get('/moneyMaker/getUserPoolAddress') 
             console.log("log",response.data.poolAddress)
             setPoolWalletAddres(response.data.poolAddress)
             setLoading(false)
