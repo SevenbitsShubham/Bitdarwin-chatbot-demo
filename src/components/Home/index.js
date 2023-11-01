@@ -52,7 +52,7 @@ export default function Home(){
     //     "periodInMonth": 4,
     //     "needForstrikePriceAssistanceUsingARIMA": "yes",
     //     "strikePriceInUsd": 35000,
-    //     "tokenQuantity": 0.0003,
+    //     "tokenQuantity": null,
     //     "noOfContracts": 2
     // })
     const [currentContractParams,setcurrentContractParams] = useState({currency:null,periodInMonth:null,needForstrikePriceAssistanceUsingARIMA:null,strikePriceInUsd:null,tokenQuantity:null,noOfContracts:null})
@@ -786,7 +786,7 @@ export default function Home(){
         <div className='container py-5 '>
             {
                 !active &&
-                  <h3 className='text-center text-danger '>AInstein wants you to Connect your wallet!</h3>
+                  <h3 className='text-center text-danger '>Ainstein wants you to Connect your wallet!</h3>
             }
             <div className='offset-3 '>
                 <div className='col-8 chatHistory'>
