@@ -1,7 +1,9 @@
 import React,{useState,useEffect} from 'react'
 import Api from '../../utils/Api';
 import {QRCodeCanvas} from 'qrcode.react';
+import Emitter from '../../utils/Emitter';
 import Form from 'react-bootstrap/Form';
+import Loader from '../Loader';
 
 
 export default function AccountSection(props){
@@ -56,6 +58,7 @@ export default function AccountSection(props){
             console.log("debug20",response)
             setProcessing(false)
             alert("Your transaction is validated successfully.")
+            Emitter.emit('callBalanceApi',null)
         }
         catch(error){
           console.log("error",error)
@@ -91,15 +94,21 @@ export default function AccountSection(props){
                                         <Form.Control size="lg" className='mt-3' type="text" placeholder="Enter user wallet address." onChange={(e)=>setOffTxForm((data)=>({...data,userWalletAddress:e.target.value}))}  />   
                                         <Form.Control size="lg" className='mt-3' type="text" placeholder="Enter transaction hash." onChange={(e)=>setOffTxForm((data)=>({...data,userTxHash:e.target.value}))}  />  
                                         <Form.Control size="lg" className='mt-3' type="text" placeholder="Enter Quantity." onChange={(e)=>setOffTxForm((data)=>({...data,userAssetQuantity:e.target.value}))}  />   
-                                        <button className='btn btn-primary mt-3 btn-schema' onClick={(e)=>handleTxForm(e)}>Proceed</button>        
+                                        <button className='btn btn-primary mt-3 btn-schema' onClick={(e)=>handleTxForm(e)}>Proceed</button>   
                                     </form>
                                 </div>
                         </div>     
                     </div>
            </div>
             :
-            <p>...Loading...</p>
-           }    
+            <p>...loading...</p>
+           }   
+           {
+            processing ?
+                <Loader/>
+            :
+            null                        
+            }
        </div>
        </>        
     )

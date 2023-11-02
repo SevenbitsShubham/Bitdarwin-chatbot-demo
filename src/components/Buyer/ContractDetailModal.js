@@ -33,7 +33,7 @@ export default function ContractDetailModal(props){
                             <div className='row modal-details-row'>
                                 <div className='col'>
                                     <p className='text-start text-dark'>
-                                    <b>Contract Type</b>: {props.viewContractDetails.contractType}
+                                    <b>Contract Type</b>: {props.viewContractDetails.contractType==="MoneyMaker" ?"OptionContract(c)":props.viewContractDetails.contractType}
                                     </p>
                                 </div>
                                 <div className='col'>    

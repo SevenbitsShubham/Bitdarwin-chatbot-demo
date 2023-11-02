@@ -45,7 +45,7 @@ export default function ContractResellModal(props){
                     </Modal.Title>
                 </Modal.Header> 
                 <Modal.Body>
-                    <h5 className='text-center'>After Reselling the contract contract will be available for buy to other buyers.</h5>
+                    <h5 className='text-center'>By reselling, the contract will be available for purchase by other buyers.</h5>
                     <h6 className='text-center'>To confirm the contract re-sell please click on below button.</h6>
                     <div className='d-flex justify-content-center'>
                         <button className='btn btn-danger' onClick={handleResellApi}>Confirm</button>    
