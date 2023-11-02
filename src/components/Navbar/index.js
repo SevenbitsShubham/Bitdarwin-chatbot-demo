@@ -11,6 +11,7 @@ import Emitter from '../../utils/Emitter';
 import Nav from 'react-bootstrap/Nav';
 import {usdcAbi,usdcAddress} from '../../utils/usdcContract'
 import { ethers } from "ethers";
+import {handleUserRegistration} from '../../utils/helper'
 import './index.css'
 
 
@@ -32,7 +33,7 @@ export default function NavbarComponent(){
         }
         else{
             if(active){
-                getmoneymakerBalance()
+                handleWalletApi()
             }
         }
         Emitter.on('callBalanceApi',()=>{
@@ -45,10 +46,14 @@ export default function NavbarComponent(){
 
     useEffect(()=>{
         Emitter.on('updateUsdcBalance',()=>{
-            console.log("fired")
             getUsdcBalance()    
         })
     },[usdcBalance])
+
+    const  handleWalletApi= async() =>{
+                await handleUserRegistration(account)
+                await getmoneymakerBalance()
+    }
 
     const getUsdcBalance = async(reqLibrary)=>{
         try{
@@ -82,6 +87,7 @@ export default function NavbarComponent(){
 
     const handleAccountSection = (status) =>{
         setAccountSectionMode(status) 
+        getmoneymakerBalance()
         Emitter.emit('setAccountSection',{status})
     }
 

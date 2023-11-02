@@ -46,9 +46,14 @@ export default function MyContracts(props){
                                         <td>{contractDetails.expirationDate}</td>
                                         <td><button className='btn btn-success' onClick={()=>handleViewContractDetails(contractDetails)}>View Details</button></td>
                                         {
-                                            contractDetails.status === "inprocess" ?
+                                            contractDetails.status === "inprocess" && contractDetails.CreaterId.walletAddress !== props.account ?
                                                 <td><button className='btn btn-danger' onClick={()=>handleResell(contractDetails)}>Sell</button></td>
                                             :
+                                            null
+                                        }
+                                        {
+                                            contractDetails.CreaterId.walletAddress === props.account ?
+                                            <td>Owner*</td>:
                                             null
                                         }
                                         </tr>

@@ -52,9 +52,9 @@ export default function Home(){
     //     "currency": "BTC",
     //     "periodInMonth": 4,
     //     "needForstrikePriceAssistanceUsingARIMA": "yes",
-    //     "strikePriceInUsd": 35000,
+    //     "strikePriceInUsd": 32000,
     //     "tokenQuantity": null,
-    //     "noOfContracts": 2
+    //     "noOfContracts": 3
     // })
     const [currentContractParams,setcurrentContractParams] = useState({currency:null,periodInMonth:null,needForstrikePriceAssistanceUsingARIMA:null,strikePriceInUsd:null,tokenQuantity:null,noOfContracts:null})
     const [housingContractParams,setHousingContractParams] = useState({titleOfContract:null,sellerName:null,buyerName:null,propertyAddress:null,sellingPriceOrRentPrice:null,closingDate:null,governingLaw:null,termsForContract:null})
@@ -106,9 +106,6 @@ export default function Home(){
     useEffect(()=>{
         if(library){
             setProvider(new ethers.BrowserProvider(library._provider))
-        }
-        if(active){
-            handleUserRegistration(account)
         }
     },[active])
 
@@ -414,8 +411,9 @@ export default function Home(){
         }
     }
 
-    const handleUserInput = async()=>{
+    const handleUserInput = async(e)=>{
         //  setChats(()=>[...chats,{text:userInput,role:'user'} ] )
+        e.preventDefault()
         console.log("debug1",messageCount,moneymakerMode,housingContractMode)
         setLoading(true)
         inputRef.current.value=''
@@ -876,15 +874,15 @@ export default function Home(){
                      </div>   
                 </div>    
                 <div className='row mt-4 inputClass align-items-center'>    
+                    <form onSubmit={(event)=>!loading?handleUserInput(event):''}>
                     <div className='col-8'>
                         {/* <Form.Control size="lg" type="text" disabled={!active} placeholder="Welcome ! Type here..." onChange={(e)=>setUserInput(e.target.value)}  ref={inputRef}/>    */}
-                        <Form.Control size="lg" type="text" placeholder="Welcome ! Type here..." onChange={(e)=>setUserInput(e.target.value)}  ref={inputRef}/>   
+                        <Form.Control size="lg" type="text" placeholder="Welcome ! Type here..." disabled={contractMode|| !active} onChange={(e)=>setUserInput(e.target.value)}  ref={inputRef}/>   
                     </div>   
-                    <div className='col-3'>
-                        {/* <Button variant="primary">Enter</Button> */}
-                        {/* <button className='btn btn-primary' onClick={handleUserInput} disabled={!active}>Enter</button> */}
+                    {/* <div className='col-3'>
                         <button className='btn btn-schema' onClick={()=>!loading?handleUserInput():''} disabled={contractMode|| !active} >Enter</button>
-                    </div>
+                    </div> */}
+                    </form>
                 </div>
             </div>
         </div>

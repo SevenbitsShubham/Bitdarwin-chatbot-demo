@@ -11,6 +11,7 @@ import Table from 'react-bootstrap/Table';
 import {usdcAbi,usdcAddress} from '../../utils/usdcContract'
 import {handleUserRegistration} from '../../utils/helper'
 import { ethers } from "ethers";
+import Loader from '../Loader';
 import './index.css'
 
 export default function BuyerPortal(){
@@ -28,24 +29,21 @@ export default function BuyerPortal(){
     const [usdcInstance,setUsdcInstance] = useState()
     const [userUsdcBalance,setUserUsdcBalance] = useState(0)
     const [loading,setLoading] = useState(false)
+    const [processing,setProcessing] =useState(false)
 
     const {active,account,chainId,library} = useWeb3React()
 
     useEffect(()=>{
-        if(marketplaceMode){
-            getContractList()
-        }
-        else{
-            getUserContracts()
-        }
-
         let provider
         if(active){
-            handleUserRegistration(account)
+            if(marketplaceMode){
+                getContractList()
+            }
+            else{
+                getUserContracts()
+            }
             initUsdcContract()
         }
-    
-        
     },[marketplaceMode,active])
     
     useEffect(()=>{
@@ -55,7 +53,10 @@ export default function BuyerPortal(){
     useEffect(()=>{
         Emitter.on('changeToMyContracts',()=>setMarketplaceMode(false))
  
-        Emitter.on('changeToMarketplace',()=>setMarketplaceMode(true))
+        Emitter.on('changeToMarketplace',()=>{
+            setListContractType("MoneyMaker")
+            setMarketplaceMode(true)
+        })
 
     },[])
 
@@ -97,6 +98,7 @@ export default function BuyerPortal(){
         try{  
             setLoading(true)  
             let payload = {
+                walletAddress:account,
                 contractType: listContractType
             }
             let reqContractList = await Api.post('/buyer/contract/list',payload)
@@ -118,9 +120,11 @@ export default function BuyerPortal(){
 
     const handleTransaction = async() =>{
         try{
-        let reqAmount = reqcontractAddress?.premium * 1000000       
+            setProcessing(true)
+        let reqAmount = reqcontractAddress?.premium * 1000000    
         if(userUsdcBalance < reqAmount){
             alert("Low usdc balance!")
+            setProcessing(false)
             return
         }  
         let provider = new ethers.BrowserProvider(library._provider)
@@ -145,8 +149,10 @@ export default function BuyerPortal(){
         //     console.log("inTimer")
         //     Emitter.emit("updateUsdcBalance",library)            
         //    }, 4000);
+        setProcessing(false)
         }
         catch(error){
+            setProcessing(false)
             console.log("error",error)
         }
     }
@@ -223,8 +229,10 @@ export default function BuyerPortal(){
 
 
             {
-                            !contractList.length &&
+                            !contractList.length && active  ?
                             <h5 className='text-center header-schema'>Currently No contract is available for sell.</h5> 
+                            :
+                            null
                         }
             </div>
 
@@ -248,7 +256,7 @@ export default function BuyerPortal(){
                        {
                         !loading ?
                             myContractsList.length ?
-                            <MyContracts myContractsList={myContractsList} getUserContracts={getUserContracts}/>
+                            <MyContracts myContractsList={myContractsList} getUserContracts={getUserContracts} account={account}/>
                             :
                             <h5 className='text-center header-schema'>Currently requested contract is not availabel.</h5> 
                         :
@@ -286,6 +294,13 @@ export default function BuyerPortal(){
                 </Modal>
                 <ContractDetailModal viewDetailsModalShow={viewDetailsModalShow} setViewDetailsModalShow={setViewDetailsModalShow} viewContractDetails={viewContractDetails}/>
             </div>    
+
+            {
+                processing?
+                    <Loader/>
+                :
+                 null
+            }
             </div> 
         </>
     )
