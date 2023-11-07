@@ -51,20 +51,20 @@ export default function Home(){
     // const [currentContractParams,setcurrentContractParams]= useState({
     //     "currency": "BTC",
     //     "periodInMonth": 4,
-    //     "needForstrikePriceAssistanceUsingARIMA": "yes",
+    //     "wouldYouLikeToSeePricePredictionBasedOnHistoricalDailyPricesUsingTimeSeriesModelAlsoKeepInMindThisinformationShouldNotBeConsideredAsFinancialAdvice": "yes",
     //     "strikePriceInUsd": 32000,
     //     "tokenQuantity": null,
     //     "noOfContracts": 3
     // })
-    const [currentContractParams,setcurrentContractParams] = useState({currency:null,periodInMonth:null,needForstrikePriceAssistanceUsingARIMA:null,strikePriceInUsd:null,tokenQuantity:null,noOfContracts:null})
-    const [housingContractParams,setHousingContractParams] = useState({titleOfContract:null,sellerName:null,buyerName:null,propertyAddress:null,sellingPriceOrRentPrice:null,closingDate:null,governingLaw:null,termsForContract:null})
+    const [currentContractParams,setcurrentContractParams] = useState({currency:null,periodInMonth:null,wouldYouLikeToSeePricePredictionBasedOnHistoricalDailyPricesUsingTimeSeriesModelAlsoKeepInMindThisinformationShouldNotBeConsideredAsFinancialAdvice:null,strikePriceInUsd:null,tokenQuantity:null,noOfContracts:null})
+    const [housingContractParams,setHousingContractParams] = useState({titleOfContract:null,sellerName:null,buyerName:null,propertyAddress:null,sellingPriceOrRentPrice:null,closingDateForContractItShouldBeInYYMMDDFormat:null,governingLaw:null,termsForContract:null})
     // const [housingContractParams,setHousingContractParams] = useState({
     //     "titleOfContract": "House Sale Contract",
-    //     "sellerName": "Jim Carrey",
-    //     "buyerName": "BuyerSam Altman",
-    //     "propertyAddress": "House no. 56, New Jersey,USA",
+    //     "sellerName": "Jim ",
+    //     "buyerName": "Mac",
+    //     "propertyAddress": "House no. 56, New York,USA",
     //     "sellingPriceOrRentPrice": 5000000,
-    //     "closingDate": "2023-12-05",
+    //     "closingDateForContractItShouldBeInYYMMDDFormat": null,//"2023-12-08",
     //     "governingLaw": "USA",
     //     "termsForContract": "Payment should be in Check."
     // })
@@ -121,8 +121,8 @@ export default function Home(){
                 if(chats[chats.length-1].text.includes('strike price') && chats[chats.length-1].text.includes('USD')){
                     inputText = 'Strike Price: $'+inputText 
                 }
-
-                if((chats[chats.length-1].text.includes('quantity') && chats[chats.length-1].text.includes('token'))){                   
+                // console.log("log",verifyLockBalanceMode)
+                if((chats[chats.length-1].text.includes('quantity') && chats[chats.length-1].text.includes('token')) || verifyLockBalanceMode){                   
                         alert("Platform fees of 0.0002BTC will be additionally charged from the wallet.We are transferring the funds to the pool wallet this may take some time.Thanks")
                         let txData = await handleAssetQuantityTransfer(inputText)   
                         console.log("debug21",txData)            
@@ -133,14 +133,15 @@ export default function Home(){
                             setTempQuantity(inputText)
                             return
                         }   
+                setVerifyLockBalanceMode(false)
                         
                         setLoading(true)
 
                     inputText = 'quantity: '+inputText 
                 }
 
-                if(chats[chats.length-1].text.includes('ARIMA') ){
-                    inputText = 'needForstrikePriceAssistanceUsingARIMA: '+inputText.toLowerCase() 
+                if(chats[chats.length-1].text.includes('price prediction') &&  chats[chats.length-1].text.includes('time series model')){
+                    inputText = 'wouldYouLikeToSeePricePredictionBasedOnHistoricalDailyPricesUsingTimeSeriesModelAlsoKeepInMindThisinformationShouldNotBeConsideredAsFinancialAdvice: '+inputText.toLowerCase() 
                 }
 
                 if(chats[chats.length-1].text.includes('number') && chats[chats.length-1].text.includes('call option contracts')){
@@ -151,8 +152,8 @@ export default function Home(){
             let {remianingDetails,updatedDetails} = await filterResponse(inputText,currentContractParams)
             setcurrentContractParams(updatedDetails)
             console.log("remianingDetails",remianingDetails,"updatedDetails",updatedDetails)
-            console.log("log21", isPricePlotIsrequested,updatedDetails.needForstrikePriceAssistanceUsingARIMA)
-            if(isPricePlotIsrequested && (updatedDetails.needForstrikePriceAssistanceUsingARIMA=== "yes" || updatedDetails.needForstrikePriceAssistanceUsingARIMA=== "required")){
+            // console.log("log21", isPricePlotIsrequested,updatedDetails.wouldYouLikeToSeePricePredictionBasedOnHistoricalDailyPricesUsingTimeSeriesModelAlsoKeepInMindThisinformationShouldNotBeConsideredAsFinancialAdvice)
+            if(isPricePlotIsrequested && (updatedDetails.wouldYouLikeToSeePricePredictionBasedOnHistoricalDailyPricesUsingTimeSeriesModelAlsoKeepInMindThisinformationShouldNotBeConsideredAsFinancialAdvice=== "yes" || updatedDetails.wouldYouLikeToSeePricePredictionBasedOnHistoricalDailyPricesUsingTimeSeriesModelAlsoKeepInMindThisinformationShouldNotBeConsideredAsFinancialAdvice=== "required")){
                 let plotUrl= await handlePricePrediction()
                 tempChats= [...tempChats,{text:plotUrl,role:'assistant',property:'plot',params:null }]
                 setIsPricePlotIsrequested(false)
@@ -206,16 +207,14 @@ export default function Home(){
                 setLoading(true)
                 let requestedChat = await askHousingContractReqFields(remianingDetails[0])
                 setLoading(false)
-                console.log("log22",requestedChat)
                 setChats(()=>[...tempChats,{text:requestedChat.text,role:'assistant',property:'' }])    
             }
             else{
-                console.log("inQuery")
                 setPromptManageMode(false)
                 setContractMode(true)
                 setLoading(true)
-                handleGenerateSqlqueryHousingContract(updatedDetails.titleOfContract,updatedDetails.buyerName,updatedDetails.sellerName,updatedDetails.governingLaw,updatedDetails.propertyAddress,updatedDetails.sellingPriceOrRentPrice,updatedDetails.termsForContract,updatedDetails.closingDate,tempChats)    
-                setLoading(false)
+                await handleFeetransfer(updatedDetails,tempChats)
+
             }
             
         }
@@ -240,22 +239,23 @@ export default function Home(){
             setPoolTxHash(result.data.TransactionHash)    
             Emitter.emit('callBalanceApi',null)  
             setProcessing(false)
-            return {status:"success",poolAddress:null}
+            return {status:"success"}
         }
         catch(error){
             setProcessing(false)
             console.log("error",error)
             if(error.response?.data === 'Low wallet balance.'){
-                return {status:"failed",poolAddress:error.response.data.poolwalletAddress}
+                return {status:"failed"}
                 // handleExtPoolTxValidation(quantity,error.response.data.poolwalletAddress)
             }
         }
     }
 
+
+
     const handleExtPoolTxValidation = (quantity,poolAddress) =>{
         try{
-           setChats(()=>[...chats,{text:quantity,role:'user',property:'' } ,{text:'Your wallet has lower balance than the entered amount,please go to Account Settings and transfer and validate the transaction from there.',role:'assistant',property:'' },{text:'',role:'assistant',property:'offTxMode' } ])    
-           setLockPoolAddresss(poolAddress)
+           setChats(()=>[...chats,{text:quantity,role:'user',property:'' } ,{text:'Your wallet has lower balance than the entered amount,please go to Account Settings and top-up your wallet with WBTC tokens.',role:'assistant',property:'' }])    
            setLockBalanceMode(false)
            setVerifyLockBalanceMode(true)
         }
@@ -379,9 +379,11 @@ export default function Home(){
     const handlePricePrediction = async() =>{
         try{
         setLoading(true)    
-        let result= await Api.get('/prediction/btcPrice')
+        let payload={
+            months: currentContractParams.periodInMonth
+        }
+        let result= await Api.post('/prediction/btcPrice',payload)
         setLoading(false)
-        console.log("log8",result)
         return result.data.url
         }
         catch(error){
@@ -688,7 +690,7 @@ export default function Home(){
                 propertyAddress:housingContractParams.propertyAddress,
                 sellingPrice:housingContractParams.sellingPriceOrRentPrice,
                 terms:housingContractParams.termsForContract,
-                expirationDate:housingContractParams.closingDate,
+                expirationDate:housingContractParams.closingDateForContractItShouldBeInYYMMDDFormat,
                 query:sqlQuery.slice(0,20),
                 hex:sqlQueryHex.slice(0,25),
                 deployment:deploymentModethod,
@@ -725,7 +727,7 @@ export default function Home(){
         setHousingContractMode(false)
         setMoneyMakerMode(false)
         setContractMode(false)
-        setcurrentContractParams({currency:null,periodInMonth:null,needForstrikePriceAssistanceUsingARIMA:null,strikePriceInUsd:null,tokenQuantity:null,noOfContracts:null})
+        setcurrentContractParams({currency:null,periodInMonth:null,wouldYouLikeToSeePricePredictionBasedOnHistoricalDailyPricesUsingTimeSeriesModelAlsoKeepInMindThisinformationShouldNotBeConsideredAsFinancialAdvice:null,strikePriceInUsd:null,tokenQuantity:null,noOfContracts:null})
         setHousingContractParams({titleOfContract:null,sellerName:null,buyerName:null,propertyAddress:null,sellingPriceOrRentPrice:null,closingDate:null,governingLaw:null,termsForContract:null})
         setInitphase(true)  
         setPromptFormatterCount(0)
@@ -777,6 +779,36 @@ export default function Home(){
        } 
     }
 
+    const handleFeetransfer = async(updatedDetails,tempChats,e=null) =>{
+        try{
+            setLoading(true)
+            if(e){
+                e.preventDefault()
+            }
+            // setProcessing(true)
+            alert("We are despositing the platform fee 0.0002 BTC.Please Wait till transaction is processing.")
+            // let response = window.confirm('To proceed with  we are despositing the platform fee 0.0002 BTC.Please Wait till transaction is processing.')
+            await Api.post('/moneyMaker/transferFees', {
+                userWalletAddress:account,
+            })
+            alert("0.0002 BTC fee is successfully deducted from your wallet as a platform fee.")
+            // setProcessing(false)
+            Emitter.emit('callBalanceApi',null)
+            await handleGenerateSqlqueryHousingContract(updatedDetails.titleOfContract,updatedDetails.buyerName,updatedDetails.sellerName,updatedDetails.governingLaw,updatedDetails.propertyAddress,updatedDetails.sellingPriceOrRentPrice,updatedDetails.termsForContract,updatedDetails.closingDate,tempChats)    
+            setChats(tempChats)
+            setLoading(false)
+        }
+        catch(error){
+            console.log("error",error)
+            // alert(error.message)
+            if(error.response?.data === 'Low wallet balance.'){
+                setChats(()=>[...tempChats,{text:'Your wallet has lower balance than the entered amount,please go to Account Settings and top-up your wallet with WBTC tokens.',role:'assistant',property:'' },{text:'',role:'assistant',property:'lowFeesForHc'}])    
+                // handleExtPoolTxValidation(quantity,error.response.data.poolwalletAddress)
+            }
+            setLoading(false)
+        }
+    }
+
     return(
         <>
         <div className='mainDiv'>
@@ -821,27 +853,19 @@ export default function Home(){
                                                     :
                                                     
                                                         chat.property === "plot" ?
-                                                            <div className='plotSection' key={i}>
+                                                            <div className='d-flex justify-content-center plotSection' key={i}>
                                                                 <p >
                                                                       <img src={chat.text} alt='' height={280}/>
                                                                     {/* <span className='chat-text-modifier p-2'>{chat.text}</span>  */}
                                                                 </p>
                                                             </div>
                                                         :
-                                                        chat.property === "offTxMode" ?
+                                                        chat.property === "lowFeesForHc" ?
                                                         <>   
                                                         <div className='chatSection-assistance-contractOp '>
-                                                                <div className=' chat-text-modifier-cover'> 
-                                                                <div className='chat-text-modifier'>
-                                                                    <p>Kindly provide transaction hash of the tranaction after completing the validating transaction from Account Settings:</p>   
-                                                                    <div >
                                                                     <form>
-                                                                        <Form.Control size="lg" className='mt-3' type="text" placeholder="Enter transaction hash." onChange={(e)=>setOffTxForm((data)=>({...data,userTxHash:e.target.value}))}  />  
-                                                                        <button className='btn btn-primary mt-3' onClick={(e)=>handleTxForm(e)}>Proceed</button>        
+                                                                        <button className='btn btn-primary mt-3' onClick={(event)=>handleFeetransfer(housingContractParams,chats,event)}>Retry!</button>        
                                                                     </form>
-                                                                    </div>
-                                                                </div> 
-                                                                </div>
                                                         </div>
                                                     </> 
                                                             :

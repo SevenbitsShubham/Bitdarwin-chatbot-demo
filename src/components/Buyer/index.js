@@ -138,7 +138,7 @@ export default function BuyerPortal(){
         console.log("log",tx.hash)
             let payload = {
                 contractId:reqcontractAddress.id,
-                txAmount:1,
+                txHash:tx.hash,
                 userWalletAddress:account
             }
            await Api.post('buyer/buy',payload) 
