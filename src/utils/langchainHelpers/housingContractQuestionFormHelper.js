@@ -14,7 +14,7 @@ const schema={
         buyerName:{type:"string",description:"This is name of the person with whom seller is interested to create a housing contract."},
         propertyAddress:{type:"string",description:"This is a address of the property for which seller want to create the housing contract."},
         sellingPriceOrRentPrice:{type:"integer",description:"This is the selling or rent price of the property to create the housing contract.."},
-        closingDate:{type:"string",description:"This is the date at which contract validity will expire to create the housing contract.."}, 
+        closingDateForContractItShouldBeInYYMMDDFormat:{type:"string",description:"This is the date at which contract validity will expire to create the housing contract.."}, 
         governingLaw:{type:"string",description:"This is the governing law for the property mentioned in the housing contract to create the housing contract.."}, 
         termsForContract:{type:"string",description:"This is the governing law for the property mentioned in the housing contract to create the housing contract.."} 
     }

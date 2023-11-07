@@ -40,8 +40,6 @@ export default function NavbarComponent(){
             getmoneymakerBalance()
         })
 
-        
-
     },[active])
 
     useEffect(()=>{
@@ -57,7 +55,7 @@ export default function NavbarComponent(){
 
     const getUsdcBalance = async(reqLibrary)=>{
         try{
-        // console.log("debug8",reqLibrary)    
+        // console.log("debug8",library)    
         let provider = new ethers.BrowserProvider(library._provider)
         let contractInstance = new ethers.Contract(usdcAddress,usdcAbi,provider)
         let reqBalance = await contractInstance.balanceOf(account.toString())
