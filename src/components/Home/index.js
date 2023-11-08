@@ -298,7 +298,7 @@ export default function Home(){
             new OpenAIEmbeddings({openAIApiKey:process.env.REACT_APP_OPENAI_API_KEY}), 
             {
             collectionName: "test-collection-10",
-            url: "http://localhost:8080/http://localhost:8000", // Optional, will default to this value
+            url: "http://13.59.189.221:8080/http://13.59.189.221:8000", // Optional, will default to this value
             collectionMetadata: {
               "hnsw:space": "cosine",
             }, // Optional, can be used to  specify the distance method of the embedding space https://docs.trychroma.com/usage-guide#changing-the-distance-function
@@ -346,7 +346,7 @@ export default function Home(){
             new OpenAIEmbeddings({openAIApiKey:process.env.REACT_APP_OPENAI_API_KEY}), 
             {
             collectionName: "sql-queries-v1",
-            url: "http://localhost:8080/http://localhost:8000", // Optional, will default to this value
+            url: "http://13.59.189.221:8080/http://13.59.189.221:8000", // Optional, will default to this value
             collectionMetadata: {
               "hnsw:space": "cosine",
             }, // Optional, can be used to specify the distance method of the embedding space https://docs.trychroma.com/usage-guide#changing-the-distance-function
@@ -582,7 +582,7 @@ export default function Home(){
             let  chromaInstance = new Chroma( new OpenAIEmbeddings({openAIApiKey:process.env.REACT_APP_OPENAI_API_KEY}), 
             {
             collectionName: "sql-queries-v1",
-            url: "http://localhost:8080/http://localhost:8000", // Optional, will default to this value
+            url: "http://13.59.189.221:8080/http://13.59.189.221:8000", // Optional, will default to this value
             collectionMetadata: {
               "hnsw:space": "cosine",
             }, // Optional, can be used to specify the distance method of the embedding space https://docs.trychroma.com/usage-guide#changing-the-distance-function
@@ -623,7 +623,7 @@ export default function Home(){
             let  chromaInstance = new Chroma( new OpenAIEmbeddings({openAIApiKey:process.env.REACT_APP_OPENAI_API_KEY}), 
             {
             collectionName: "sql-queries-v1",
-            url: "http://localhost:8080/http://localhost:8000", // Optional, will default to this value
+            url: "http://13.59.189.221:8080/http://13.59.189.221:8000", // Optional, will default to this value
             collectionMetadata: {
               "hnsw:space": "cosine",
             }, // Optional, can be used to specify the distance method of the embedding space https://docs.trychroma.com/usage-guide#changing-the-distance-function
