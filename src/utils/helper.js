@@ -19,3 +19,13 @@ export const handleUserRegistration = async(walletAddress) =>{
         alert(error.message)
     }
 }
+
+export const generateRandomString = async() =>{
+    var arr = new Uint8Array(30 / 2)
+    window.crypto.getRandomValues(arr)
+    return Array.from(arr, dec2hex).join('')
+}
+
+function dec2hex (dec) {
+    return dec.toString(16).padStart(2, "0")
+  }

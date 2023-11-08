@@ -27,6 +27,9 @@ export default function NavbarComponent(){
     useEffect(()=>{
         const currentRoute = window.location.pathname;
         console.log("currentRouter",currentRoute)
+        if(!active){
+            setShowModal(true)
+        }
         if(currentRoute.includes('/buyer')){
             getUsdcBalance()
             setBuyerMode(true)

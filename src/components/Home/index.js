@@ -17,7 +17,7 @@ import table2 from '../../utils/housingContract.json';
 import Emitter from '../../utils/Emitter';
 import {askForReqFields,filterResponse} from '../../utils/langchainHelpers/moneyMakerQuestionFormHelper'
 import {askHousingContractReqFields,filterHousingContractFormResponse} from '../../utils/langchainHelpers/housingContractQuestionFormHelper'
-import {formatDateToDdMmYy,handleUserRegistration} from '../../utils/helper'
+import {formatDateToDdMmYy,generateRandomString} from '../../utils/helper'
 import AccountSection from './AccountSection'
 import {Buffer} from 'buffer';
 
@@ -57,14 +57,14 @@ export default function Home(){
     //     "noOfContracts": 3
     // })
     const [currentContractParams,setcurrentContractParams] = useState({currency:null,periodInMonth:null,wouldYouLikeToSeePricePredictionBasedOnHistoricalDailyPricesUsingTimeSeriesModelAlsoKeepInMindThisinformationShouldNotBeConsideredAsFinancialAdvice:null,strikePriceInUsd:null,tokenQuantity:null,noOfContracts:null})
-    const [housingContractParams,setHousingContractParams] = useState({titleOfContract:null,sellerName:null,buyerName:null,propertyAddress:null,sellingPriceOrRentPrice:null,closingDateForContractItShouldBeInYYMMDDFormat:null,governingLaw:null,termsForContract:null})
+    const [housingContractParams,setHousingContractParams] = useState({titleOfContract:null,sellerName:null,buyerName:null,propertyAddress:null,sellingPriceOrRentPrice:null,closingDateForContractItShouldBeInYYdashMMdashDDFormat:null,governingLaw:null,termsForContract:null})
     // const [housingContractParams,setHousingContractParams] = useState({
     //     "titleOfContract": "House Sale Contract",
     //     "sellerName": "Jim ",
     //     "buyerName": "Mac",
     //     "propertyAddress": "House no. 56, New York,USA",
     //     "sellingPriceOrRentPrice": 5000000,
-    //     "closingDateForContractItShouldBeInYYMMDDFormat": null,//"2023-12-08",
+    //     "closingDateForContractItShouldBeInYYdashMMdashDDFormat": null,//"2023-12-08",
     //     "governingLaw": "USA",
     //     "termsForContract": "Payment should be in Check."
     // })
@@ -197,6 +197,10 @@ export default function Home(){
                 if(chats[chats.length-1].text.includes('quantity') && chats[chats.length-1].text.includes('token')){
                     inputText = 'quantity: '+inputText 
                 }
+
+                // if(chats[chats.length-1].text.includes('date') && chats[chats.length-1].text.includes('closing')){
+                //     inputText = 'wouldYouLikeToSeePricePredictionBasedOnHistoricalDailyPricesUsingTimeSeriesModelAlsoKeepInMindThisinformationShouldNotBeConsideredAsFinancialAdvice: '+inputText 
+                // }
             }
             console.log("log23",inputText)
             let {remianingDetails,updatedDetails} = await filterHousingContractFormResponse(inputText,housingContractParams)
@@ -631,7 +635,6 @@ export default function Home(){
 
             let formatInstructions = parser.getFormatInstructions()
             let template = "Answer the user's question as best you can:\n{format_instructions}\n Create a sql query for adding entry to HousingContract Table for column and their values as: title={title} buyer={buyer} seller={seller} governingLaw={governingLaw} propertyAddress={propertyAddress} sellingPrice={sellingPrice} terms={terms} expirationDate={expirationDate}"
-            // let reqPrompt = PromptTemplate.fromTemplate(template)
             let reqPrompt = new PromptTemplate({
                 template,
                 inputVariables:["title","buyer","seller","governingLaw","propertyAddress","sellingPrice","terms","expirationDate"],
@@ -652,14 +655,23 @@ export default function Home(){
         }
     }
 
+    // function handles user signature and /moneyMaker/createContract api integration
     const handleCreateContract = async(query,deploymentModethod) =>{
         try{
-        console.log("queryLog",query)
-        let sqlQueryHex=  Buffer.from(sqlQuery, 'utf-8').toString('hex')
+        let sqlQueryHex=  Buffer.from(sqlQuery, 'utf-8').toString('hex')  //creating hex using sql query
         let signer = await provider.getSigner(account) 
         let message = {query:sqlQuery,hex:sqlQueryHex}
         let reqSignature = await signer.signMessage(JSON.stringify(message)) 
+        
+        let randomString,hash,signForIcpAuth
+        //if deployment is of ICP we will create random string and concatinate it with account address and pass this message for signature from the user     
+        if(deploymentModethod === 'ICP'){ 
+        randomString =  await generateRandomString() //function to create random string
+        hash = account+randomString
+        signForIcpAuth = await signer.signMessage(JSON.stringify(hash)) 
+        }        
         setSignature(reqSignature)
+
         let payload
         if(!housingContractMode){
              payload = {
@@ -675,12 +687,15 @@ export default function Home(){
                 deployment:deploymentModethod,
                 signature:reqSignature,
                 txHash:poolTxHash,
-                contractType:"MoneyMaker"
-                
+                contractType:"MoneyMaker",
+                icpAuthSignature:signForIcpAuth,
+                icpAuthString:randomString,
             }
         }
         else{
+            //we create the housing contract from below function
             let reqhousingContract = await handleHousingContractGeneration()
+
             payload = {
                 walletAddress:account,
                 title:housingContractParams.titleOfContract,
@@ -696,12 +711,13 @@ export default function Home(){
                 deployment:deploymentModethod,
                 signature:reqSignature,
                 contractType:"HousingContract",
-                contract:reqhousingContract
+                contract:reqhousingContract,
+                icpAuthSignature:signForIcpAuth,
+                icpAuthString:randomString,
             }
         }
         await Api.post('/moneyMaker/createContract',payload)
-        //addChange
-        // setcontractParams({strikePrice:null,premium:null,openInterest:null,expirationDate:null})
+
         setSignature(null)
         setSqlQuery(null)
         setContractMode(false)
@@ -713,12 +729,14 @@ export default function Home(){
             tempChats = [...chats,{text:"Contract creation is in progress, Thanks!!",role:'assistant',property:''}]        
         }
         setChats(tempChats)     
-        resetContractMode()
-        Emitter.emit('callBalanceApi',null)
-        // alert(`Amount of ${currentContractParams.tokenQuantity}${currentContractParams.currency} has been transferred to the pool account for contract creation.`)
+        resetContractMode() //function to reset the contract mode
+        Emitter.emit('callBalanceApi',null) //emitter for updating use balance
         }
         catch(error){
-            console.log("error",error)
+            console.log("error",error,error.info.error.code)
+            if(error.info.error.code === 4001){
+                alert("User rejected the signature.")
+            }
         }
     }
 
