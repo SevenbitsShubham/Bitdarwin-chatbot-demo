@@ -30,7 +30,7 @@ export default function NavbarComponent(){
         if(!active){
             setShowModal(true)
         }
-        if(currentRoute.includes('/buyer')){
+        if(currentRoute.includes('/explorer')){
             getUsdcBalance()
             setBuyerMode(true)
         }

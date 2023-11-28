@@ -20,6 +20,7 @@ import {askHousingContractReqFields,filterHousingContractFormResponse} from '../
 import {formatDateToDdMmYy,generateRandomString} from '../../utils/helper'
 import AccountSection from './AccountSection'
 import {Buffer} from 'buffer';
+import BigNumber from 'bignumber.js';
 
 /////////////////////// enable strictmode in react ///////////////////////////
 export default function Home(){
@@ -51,10 +52,19 @@ export default function Home(){
     // const [currentContractParams,setcurrentContractParams]= useState({
     //     "currency": "BTC",
     //     "periodInMonth": 4,
-    //     "wouldYouLikeToSeePricePredictionBasedOnHistoricalDailyPricesUsingTimeSeriesModelAlsoKeepInMindThisinformationShouldNotBeConsideredAsFinancialAdvice": "yes",
-    //     "strikePriceInUsd": 32000,
-    //     "tokenQuantity": null,
+    //     "wouldYouLikeToSeePricePredictionBasedOnHistoricalDailyPricesUsingTimeSeriesModelAlsoKeepInMindThisinformationShouldNotBeConsideredAsFinancialAdvice": "no",
+    //     "strikePriceInUsd": 42000,
+    //     "tokenQuantity": 0.002,
     //     "noOfContracts": 3
+    // })
+
+    // const [currentContractParams,setcurrentContractParams]= useState({
+    //     "currency": "BTC",
+    //     "periodInMonth": 4,
+    //     "wouldYouLikeToSeePricePredictionBasedOnHistoricalDailyPricesUsingTimeSeriesModelAlsoKeepInMindThisinformationShouldNotBeConsideredAsFinancialAdvice": "no",
+    //     "strikePriceInUsd": 42000,
+    //     "tokenQuantity": null,
+    //     "noOfContracts": null
     // })
     const [currentContractParams,setcurrentContractParams] = useState({currency:null,periodInMonth:null,wouldYouLikeToSeePricePredictionBasedOnHistoricalDailyPricesUsingTimeSeriesModelAlsoKeepInMindThisinformationShouldNotBeConsideredAsFinancialAdvice:null,strikePriceInUsd:null,tokenQuantity:null,noOfContracts:null})
     const [housingContractParams,setHousingContractParams] = useState({titleOfContract:null,sellerName:null,buyerName:null,propertyAddress:null,sellingPriceOrRentPrice:null,closingDateForContractItShouldBeInYYdashMMdashDDFormat:null,governingLaw:null,termsForContract:null})
@@ -83,7 +93,6 @@ export default function Home(){
     let chain
     let vectorStore
 
-    console.log("debug123",active)
     useEffect(()=>{
         setupInitConvoChain()
         let potentialQueries1= generateSqlQueries(table1,"MoneyMakerContract")
@@ -123,21 +132,19 @@ export default function Home(){
                 }
                 // console.log("log",verifyLockBalanceMode)
                 if((chats[chats.length-1].text.includes('quantity') && chats[chats.length-1].text.includes('token')) || verifyLockBalanceMode){                   
-                        alert("Platform fees of 0.0002BTC will be additionally charged from the wallet.We are transferring the funds to the pool wallet this may take some time.Thanks")
-                        let txData = await handleAssetQuantityTransfer(inputText)   
-                        console.log("debug21",txData)            
-                        setLoading(false)
-                        if(txData.status === "failed"){
-                            handleExtPoolTxValidation(inputText,txData.poolAddress)
-
-                            setTempQuantity(inputText)
-                            return
-                        }   
-                setVerifyLockBalanceMode(false)
-                        
-                        setLoading(true)
-
-                    inputText = 'quantity: '+inputText 
+                    console.log("finalQuantity0",inputText,process.env.REACT_APP_PLATFORM_FEES)
+                     let finalQuantity =  (new BigNumber(inputText).plus(new BigNumber(process.env.REACT_APP_PLATFORM_FEES))).toNumber()
+                     console.log("finalQuantity",finalQuantity)  
+                    if(finalQuantity> userBalance){
+                        handleExtPoolTxValidation(inputText)
+                        tempChats =[ ...tempChats,{text:'Your wallet has lower balance than the entered amount,please go to Account Settings and top-up your wallet with WBTC tokens.',role:'assistant',property:'' }]
+                        inputText = null
+                    }
+                    else{
+                        setVerifyLockBalanceMode(false)
+                        inputText = 'quantity: '+inputText
+                    }                       
+                     
                 }
 
                 if(chats[chats.length-1].text.includes('price prediction') &&  chats[chats.length-1].text.includes('time series model')){
@@ -228,7 +235,7 @@ export default function Home(){
         }
     }
 
-    const handleAssetQuantityTransfer = async(quantity) =>{
+    const handleAssetQuantityTransfer = async(quantity,deploymentModethod) =>{
         try{
             setProcessing(true)
             setLoackAssetsQuantity(quantity)
@@ -236,14 +243,15 @@ export default function Home(){
             let payload = {
                 "walletAddress":account,
                 "currency":currentContractParams.currency,
-                "quantity":parseFloat(quantity) 
+                "quantity":parseFloat(quantity),
+                "deployment":deploymentModethod
             }    
             let result= await Api.post('/moneyMaker/lockAssets',payload)
             alert(`${quantity} ${payload.currency} has been locked to pool wallet successfully.\nTransaction Hash: ${result.data.TransactionHash}`)
             setPoolTxHash(result.data.TransactionHash)    
             Emitter.emit('callBalanceApi',null)  
             setProcessing(false)
-            return {status:"success"}
+            return {status:"success",txHash:result.data.TransactionHash}
         }
         catch(error){
             setProcessing(false)
@@ -259,7 +267,7 @@ export default function Home(){
 
     const handleExtPoolTxValidation = (quantity,poolAddress) =>{
         try{
-           setChats(()=>[...chats,{text:quantity,role:'user',property:'' } ,{text:'Your wallet has lower balance than the entered amount,please go to Account Settings and top-up your wallet with WBTC tokens.',role:'assistant',property:'' }])    
+        //    setChats(()=>[...chats,{text:quantity,role:'user',property:'' } ,{text:'Your wallet has lower balance than the entered amount,please go to Account Settings and top-up your wallet with WBTC tokens.',role:'assistant',property:'' }])    
            setLockBalanceMode(false)
            setVerifyLockBalanceMode(true)
         }
@@ -453,7 +461,7 @@ export default function Home(){
                     setMoneyMakerMode(true)
                     setPromptManageMode(true)    
                 }
-                else if(givenInput.includes('housing') || givenInput.includes('contract')){
+                else if((givenInput.includes('housing') || givenInput.includes('contract')) && (givenInput.includes('create') || givenInput.includes('generate'))){
                     tempChats.push({text:"Sure",role:'assistant',property:'',params:null})
                     setChats(tempChats)   
                     handleHousingContractFormConversation('No data available.',tempChats)
@@ -655,6 +663,23 @@ export default function Home(){
         }
     }
 
+    let handleAssetTransfer = async(deploymentModethod) =>{
+        alert("Platform fees of 0.0002BTC will be additionally charged from the wallet.We are transferring the funds to the pool wallet this may take some time.Thanks")
+        let txData = await handleAssetQuantityTransfer(currentContractParams.tokenQuantity,deploymentModethod)   
+        console.log("debug21",txData)            
+        setLoading(false)
+        if(txData.status === "failed"){
+            handleExtPoolTxValidation(currentContractParams.tokenQuantity,txData.poolAddress)
+
+            setTempQuantity(currentContractParams.tokenQuantity)
+            return
+        }   
+        setVerifyLockBalanceMode(false)
+        
+        setLoading(true)
+        return txData
+    }
+
     // function handles user signature and /moneyMaker/createContract api integration
     const handleCreateContract = async(query,deploymentModethod) =>{
         try{
@@ -672,6 +697,8 @@ export default function Home(){
         }        
         setSignature(reqSignature)
 
+        // let tx = await handleAssetTransfer(deploymentModethod)
+
         let payload
         if(!housingContractMode){
              payload = {
@@ -685,11 +712,11 @@ export default function Home(){
                 quantity:currentContractParams.tokenQuantity,
                 currency:currentContractParams.currency,
                 deployment:deploymentModethod,
-                signature:reqSignature,
-                txHash:poolTxHash,
+                signature: reqSignature,
+                txHash: '9d65bc7b87ec1ac33a931b0bc3c18a56c8391b9bba037851c58ea9d6ef1ee401', //tx.txHash,
                 contractType:"MoneyMaker",
                 icpAuthSignature:signForIcpAuth,
-                icpAuthString:randomString,
+                icpAuthString:hash,
             }
         }
         else{

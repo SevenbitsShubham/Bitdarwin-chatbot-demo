@@ -9,14 +9,14 @@ import MyContracts from './myContracts'
 import ContractDetailModal from './ContractDetailModal'
 import Table from 'react-bootstrap/Table';
 import {usdcAbi,usdcAddress} from '../../utils/usdcContract'
-import {handleUserRegistration} from '../../utils/helper'
+import {handleUserRegistration,generateRandomString} from '../../utils/helper'
 import { ethers } from "ethers";
 import Loader from '../Loader';
 import './index.css'
 
 export default function BuyerPortal(){
     const [contractList,setContractList] = useState([])
-    const [reqcontractAddress,setreqcontractAddress] = useState(null)
+    const [reqcontract,setreqcontract] = useState(null)
     const [modalShow,setModalShow] = useState(false)
     const [viewDetailsModalShow,setViewDetailsModalShow] = useState(false)
     const [myContractsList,setMyContractsList] = useState([])
@@ -115,13 +115,13 @@ export default function BuyerPortal(){
 
     const setupModal = (contractAddress) =>{
         setModalShow(true)
-        setreqcontractAddress(contractAddress)
+        setreqcontract(contractAddress)
     }
 
     const handleTransaction = async() =>{
         try{
             setProcessing(true)
-        let reqAmount = reqcontractAddress?.premium * 1000000    
+        let reqAmount = reqcontract?.premium * 1000000    
         if(userUsdcBalance < reqAmount){
             alert("Low usdc balance!")
             setProcessing(false)
@@ -131,15 +131,24 @@ export default function BuyerPortal(){
         let signer = await provider.getSigner()
         let contractInstance1 = new ethers.Contract(usdcAddress,usdcAbi,signer)
         let tx = await contractInstance1.transfer('0x1019df527FAC955B09105c72a60C013bAC7430C5',reqAmount.toString()) 
-        let reqBalance = await contractInstance1.balanceOf(account.toString())
-        setUserUsdcBalance(reqBalance.toString()) 
+        let newUserBalance = await contractInstance1.balanceOf(account.toString())
+        setUserUsdcBalance(newUserBalance.toString()) 
 
+        let randomString,hash,signForIcpAuth
+        //if deployment is of ICP we will create random string and concatinate it with account address and pass this message for signature from the user     
+        if(reqcontract.deployment === 'ICP'){ 
+        randomString =  await generateRandomString() //function to create random string
+        hash = account+randomString
+        signForIcpAuth = await signer.signMessage(JSON.stringify(hash)) 
+        }        
 
         console.log("log",tx.hash)
             let payload = {
-                contractId:reqcontractAddress.id,
+                contractId:reqcontract.id,
                 txHash:tx.hash,
-                userWalletAddress:account
+                userWalletAddress:account,
+                icpLoginHash:hash,
+                signForIcpAuth
             }
            await Api.post('buyer/buy',payload) 
            setModalShow(false)
@@ -256,7 +265,7 @@ export default function BuyerPortal(){
                        {
                         !loading ?
                             myContractsList.length ?
-                            <MyContracts myContractsList={myContractsList} getUserContracts={getUserContracts} account={account}/>
+                            <MyContracts myContractsList={myContractsList} getUserContracts={getUserContracts} account={account} userUsdcBalance={userUsdcBalance} processing={processing} setProcessing={setProcessing} />
                             :
                             <h5 className='text-center header-schema'>Currently requested contract is not availabel.</h5> 
                         :
@@ -283,10 +292,10 @@ export default function BuyerPortal(){
                         To complete the process please pay the required amount mentioned below.
                     </p>
                     <p className='text-center text-dark'>
-                        Contract Address: <i>{reqcontractAddress?.contractAddress}</i>
+                        Contract Address: <i>{reqcontract?.contractAddress}</i>
                     </p>
                     <div className='d-flex justify-content-center'>
-                        <button className="m-2 btn btn-success" onClick={handleTransaction}>Pay {reqcontractAddress?.premium} USDC</button>
+                        <button className="m-2 btn btn-success" onClick={handleTransaction}>Pay {reqcontract?.premium} USDC</button>
                         <button className="m-2 btn btn-danger" onClick={() => setModalShow(false)}>Cancel</button>
 
                     </div>
