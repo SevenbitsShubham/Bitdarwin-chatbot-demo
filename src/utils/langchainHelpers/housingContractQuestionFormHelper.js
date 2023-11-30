@@ -42,7 +42,7 @@ return chat
 }
 
 export async function filterHousingContractFormResponse(textInput,currentDetails){
-    console.log("log19.5",textInput.length)
+    console.log("log19.5",textInput,textInput.length,currentDetails)
     let chain = createTaggingChain(schema,chatModel)
     let res = await chain.run(textInput)
     console.log("log20",currentDetails,res)

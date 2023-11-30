@@ -2,13 +2,22 @@ import React,{useState} from 'react'
 import ContractDetailModal from './ContractDetailModal'
 import ContractResellModal from './ContractResellModal'
 import Table from 'react-bootstrap/Table';
+import BuyLockedBTCModal from './BuyLockedBTCModal'
+import { ethers } from "ethers";
+import { useWeb3React } from '@web3-react/core';
+import {usdcAbi,usdcAddress} from '../../utils/usdcContract'
+import Api from '../../utils/Api';
 import './index.css'
 
 export default function MyContracts(props){
     const [viewDetailsModalShow,setViewDetailsModalShow] = useState(false)
     const [resellModal,setResellModal] = useState(false)
     const [viewContractDetails,setViewContractDetails]= useState(false)
-    
+    const [lockedBTCMode,setLockedBTCMode] = useState(false)
+    const [buyAmount,setBuyAmount] = useState(0)
+
+    const {account,library} = useWeb3React()
+
 
     const handleViewContractDetails = (reqContractDetails) =>{
         setViewDetailsModalShow(true)
@@ -19,6 +28,49 @@ export default function MyContracts(props){
         setResellModal(true)   
         setViewContractDetails(reqContractDetails)
     }
+
+    const handleBuyBTC = async(contractDetails) =>{
+        setLockedBTCMode(true)
+        setViewContractDetails(contractDetails)
+    }
+
+    const handleBuyLockedBTC = async(e) =>{
+        try{
+            e.preventDefault()
+            props.setProcessing(true)
+            // let reqAmount = props.viewContractDetails?.quantity * props.viewContractDetails.strikePrice    
+            if(props.userUsdcBalance < buyAmount){
+                alert("Low usdc balance!")
+                props.setLoading(false)
+                return
+            }      
+        let provider = new ethers.BrowserProvider(library._provider)
+        // console.log("log1",provider)
+        let signer = await provider.getSigner()
+        let contractInstance1 = new ethers.Contract(usdcAddress,usdcAbi,signer)
+        // console.log("log2",contractInstance1,buyAmount)
+        let tx = await contractInstance1.transfer('0x1019df527FAC955B09105c72a60C013bAC7430C5',buyAmount* 1000000) 
+        let newUserBalance = await contractInstance1.balanceOf(account.toString())
+        // setUserUsdcBalance(newUserBalance.toString()) 
+        alert(`Transaction Hash:${tx.hash},further vaidation process will take some time.`)
+        setLockedBTCMode(false)
+            let payload = {
+                contractAddress:viewContractDetails.contractAddress,
+                userAddress: account,
+                txHash: tx.hash
+            }
+            let apiResponse =  await Api.post('/buyer/buyLockedBTC',payload) 
+            // console.log("apiResponse",apiResponse)
+            alert(`Congratulations!! Transaction is successful. Transaction Hash:${apiResponse.data.txHash}`)
+            props.getUserContracts()
+            props.setProcessing(false)
+        }
+        catch(error){
+            console.log("error",error)
+            props.setProcessing(false)
+        }
+    }
+
     
     return(
         <>
@@ -47,15 +99,37 @@ export default function MyContracts(props){
                                         <td><button className='btn btn-success' onClick={()=>handleViewContractDetails(contractDetails)}>View Details</button></td>
                                         {
                                             contractDetails.status === "inprocess" && contractDetails.CreaterId.walletAddress !== props.account ?
+                                            <>
                                                 <td><button className='btn btn-danger' onClick={()=>handleResell(contractDetails)}>Sell</button></td>
+                                                <td></td>
+                                            </>
                                             :
                                             null
                                         }
                                         {
                                             contractDetails.CreaterId.walletAddress === props.account ?
-                                            <td>Owner*</td>:
-                                            null
+                                            <>
+                                            <td>Owner*</td>
+                                            <td></td>
+                                            </>
+                                            :
+                                                contractDetails.status === 'processingWithAboveStrikePrice'?
+                                                <>
+                                                    <td><button className='btn btn-danger' onClick={()=>handleBuyBTC(contractDetails)}>Purchase BTC</button></td>
+                                                    <td></td>
+
+                                                </>
+                                                :
+                                                contractDetails.status !== 'inprocess' ?
+                                                    <>
+                                                    <td>Expired*</td>
+                                                    <td></td>
+                                                    </>
+                                                    :
+                                                    null
+
                                         }
+                                        
                                         </tr>
                                         )
                                     })
@@ -68,7 +142,7 @@ export default function MyContracts(props){
             </Table>    
             <ContractDetailModal viewDetailsModalShow={viewDetailsModalShow} setViewDetailsModalShow={setViewDetailsModalShow} viewContractDetails={viewContractDetails}/>
             <ContractResellModal resellModal={resellModal} setResellModal={setResellModal} viewContractDetails={viewContractDetails} getUserContracts={props.getUserContracts}/>
-
+            <BuyLockedBTCModal lockedBTCMode={lockedBTCMode} setLockedBTCMode={setLockedBTCMode} viewContractDetails={viewContractDetails} userUsdcBalance= {props.userUsdcBalance} buyAmount={buyAmount} setBuyAmount={setBuyAmount} handleBuyLockedBTC={handleBuyLockedBTC} processing={props.processing}/>                
         </>
     )
 }
