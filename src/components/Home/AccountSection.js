@@ -9,7 +9,7 @@ import Loader from '../Loader';
 export default function AccountSection(props){
     const [poolAddress,setPoolWalletAddres] = useState()
     const [loading,setLoading] = useState(false)
-    const [offTxForm,setOffTxForm] = useState({userWalletAddress:null,userTxHash:null,userAssetQuantity:null})
+    const [offTxForm,setOffTxForm] = useState({userTxHash:null})
     const [processing,setProcessing] = useState(false)
 
     useEffect(()=>{
@@ -33,24 +33,15 @@ export default function AccountSection(props){
     const handleTxForm = async(e) =>{
         try{ 
          e.preventDefault()
-         setProcessing(true)
-            if(!offTxForm.userWalletAddress){
-                 alert("Please enter Wallet Address.")
-            }         
- 
+         setProcessing(true) 
             if(!offTxForm.userTxHash){
                  alert("Please enter transaction hash.")
             }
- 
-            if(!offTxForm.userAssetQuantity){
-                 alert("Please enter quantity .")
-            }
+
  
             let payload = {
              walletAddress:props.account,
-             userWalletAddress:offTxForm.userWalletAddress,
              txHash:offTxForm.userTxHash,
-             quantity:offTxForm.userAssetQuantity
             }
  
          //    console.log("checker")
@@ -62,7 +53,7 @@ export default function AccountSection(props){
         }
         catch(error){
           console.log("error",error)
-          setProcessing(true)
+          setProcessing(false)
           alert(error.response.data)
         } 
      }
@@ -91,9 +82,7 @@ export default function AccountSection(props){
                                 <h6 className='header-schema'>Kindly provide transaction details below for transaction validation:</h6>   
                                     <div >
                                     <form>
-                                        <Form.Control size="lg" className='mt-3' type="text" placeholder="Enter user wallet address." onChange={(e)=>setOffTxForm((data)=>({...data,userWalletAddress:e.target.value}))}  />   
                                         <Form.Control size="lg" className='mt-3' type="text" placeholder="Enter transaction hash." onChange={(e)=>setOffTxForm((data)=>({...data,userTxHash:e.target.value}))}  />  
-                                        <Form.Control size="lg" className='mt-3' type="text" placeholder="Enter Quantity." onChange={(e)=>setOffTxForm((data)=>({...data,userAssetQuantity:e.target.value}))}  />   
                                         <button className='btn btn-primary mt-3 btn-schema' onClick={(e)=>handleTxForm(e)}>Proceed</button>   
                                     </form>
                                 </div>

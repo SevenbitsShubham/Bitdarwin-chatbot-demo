@@ -144,7 +144,7 @@ export default function BuyerPortal(){
 
         console.log("log",tx.hash)
             let payload = {
-                contractId:reqcontract.id,
+                contractAddress:reqcontract.contractAddress,
                 txHash:tx.hash,
                 userWalletAddress:account,
                 icpLoginHash:hash,

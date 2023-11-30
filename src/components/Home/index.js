@@ -54,7 +54,7 @@ export default function Home(){
     //     "periodInMonth": 4,
     //     "wouldYouLikeToSeePricePredictionBasedOnHistoricalDailyPricesUsingTimeSeriesModelAlsoKeepInMindThisinformationShouldNotBeConsideredAsFinancialAdvice": "no",
     //     "strikePriceInUsd": 42000,
-    //     "tokenQuantity": 0.002,
+    //     "tokenQuantity": 0.0003,
     //     "noOfContracts": 3
     // })
 
@@ -116,7 +116,7 @@ export default function Home(){
         if(library){
             setProvider(new ethers.BrowserProvider(library._provider))
         }
-    },[active])
+    },[active,initPhase])
 
     const handleContractFormConversation = async(inputText='No data available.',tempChats=[...chats]) =>{
         try{
@@ -205,9 +205,9 @@ export default function Home(){
                     inputText = 'quantity: '+inputText 
                 }
 
-                // if(chats[chats.length-1].text.includes('date') && chats[chats.length-1].text.includes('closing')){
-                //     inputText = 'wouldYouLikeToSeePricePredictionBasedOnHistoricalDailyPricesUsingTimeSeriesModelAlsoKeepInMindThisinformationShouldNotBeConsideredAsFinancialAdvice: '+inputText 
-                // }
+                if(chats[chats.length-1].text.includes('date') && chats[chats.length-1].text.includes('closing')){
+                    inputText = 'wouldYouLikeToSeePricePredictionBasedOnHistoricalDailyPricesUsingTimeSeriesModelAlsoKeepInMindThisinformationShouldNotBeConsideredAsFinancialAdvice: '+inputText 
+                }
             }
             console.log("log23",inputText)
             let {remianingDetails,updatedDetails} = await filterHousingContractFormResponse(inputText,housingContractParams)
@@ -237,7 +237,7 @@ export default function Home(){
 
     const handleAssetQuantityTransfer = async(quantity,deploymentModethod) =>{
         try{
-            setProcessing(true)
+            // setProcessing(true)
             setLoackAssetsQuantity(quantity)
             setLockBalanceMode(true)
             let payload = {
@@ -250,7 +250,7 @@ export default function Home(){
             alert(`${quantity} ${payload.currency} has been locked to pool wallet successfully.\nTransaction Hash: ${result.data.TransactionHash}`)
             setPoolTxHash(result.data.TransactionHash)    
             Emitter.emit('callBalanceApi',null)  
-            setProcessing(false)
+            // setProcessing(false)
             return {status:"success",txHash:result.data.TransactionHash}
         }
         catch(error){
@@ -306,7 +306,7 @@ export default function Home(){
             new OpenAIEmbeddings({openAIApiKey:process.env.REACT_APP_OPENAI_API_KEY}), 
             {
             collectionName: "test-collection-10",
-            url: "http://localhost:8080/http://localhost:8000", // Optional, will default to this value
+            url: `${process.env.REACT_APP_CHROMADB_SERVER_URL}`, // Optional, will default to this value
             collectionMetadata: {
               "hnsw:space": "cosine",
             }, // Optional, can be used to  specify the distance method of the embedding space https://docs.trychroma.com/usage-guide#changing-the-distance-function
@@ -354,7 +354,7 @@ export default function Home(){
             new OpenAIEmbeddings({openAIApiKey:process.env.REACT_APP_OPENAI_API_KEY}), 
             {
             collectionName: "sql-queries-v1",
-            url: "http://localhost:8080/http://localhost:8000", // Optional, will default to this value
+            url: `${process.env.REACT_APP_CHROMADB_SERVER_URL}`, // Optional, will default to this value
             collectionMetadata: {
               "hnsw:space": "cosine",
             }, // Optional, can be used to specify the distance method of the embedding space https://docs.trychroma.com/usage-guide#changing-the-distance-function
@@ -590,7 +590,7 @@ export default function Home(){
             let  chromaInstance = new Chroma( new OpenAIEmbeddings({openAIApiKey:process.env.REACT_APP_OPENAI_API_KEY}), 
             {
             collectionName: "sql-queries-v1",
-            url: "http://localhost:8080/http://localhost:8000", // Optional, will default to this value
+            url: `${process.env.REACT_APP_CHROMADB_SERVER_URL}`, // Optional, will default to this value
             collectionMetadata: {
               "hnsw:space": "cosine",
             }, // Optional, can be used to specify the distance method of the embedding space https://docs.trychroma.com/usage-guide#changing-the-distance-function
@@ -631,7 +631,7 @@ export default function Home(){
             let  chromaInstance = new Chroma( new OpenAIEmbeddings({openAIApiKey:process.env.REACT_APP_OPENAI_API_KEY}), 
             {
             collectionName: "sql-queries-v1",
-            url: "http://localhost:8080/http://localhost:8000", // Optional, will default to this value
+            url: `${process.env.REACT_APP_CHROMADB_SERVER_URL}`, // Optional, will default to this value
             collectionMetadata: {
               "hnsw:space": "cosine",
             }, // Optional, can be used to specify the distance method of the embedding space https://docs.trychroma.com/usage-guide#changing-the-distance-function
@@ -667,7 +667,7 @@ export default function Home(){
         alert("Platform fees of 0.0002BTC will be additionally charged from the wallet.We are transferring the funds to the pool wallet this may take some time.Thanks")
         let txData = await handleAssetQuantityTransfer(currentContractParams.tokenQuantity,deploymentModethod)   
         console.log("debug21",txData)            
-        setLoading(false)
+        
         if(txData.status === "failed"){
             handleExtPoolTxValidation(currentContractParams.tokenQuantity,txData.poolAddress)
 
@@ -675,14 +675,13 @@ export default function Home(){
             return
         }   
         setVerifyLockBalanceMode(false)
-        
-        setLoading(true)
         return txData
     }
 
     // function handles user signature and /moneyMaker/createContract api integration
     const handleCreateContract = async(query,deploymentModethod) =>{
         try{
+        setProcessing(true)
         let sqlQueryHex=  Buffer.from(sqlQuery, 'utf-8').toString('hex')  //creating hex using sql query
         let signer = await provider.getSigner(account) 
         let message = {query:sqlQuery,hex:sqlQueryHex}
@@ -697,8 +696,8 @@ export default function Home(){
         }        
         setSignature(reqSignature)
 
-        // let tx = await handleAssetTransfer(deploymentModethod)
-
+        let tx = await handleAssetTransfer(deploymentModethod)
+        console.log("finalLog",tx)
         let payload
         if(!housingContractMode){
              payload = {
@@ -713,11 +712,12 @@ export default function Home(){
                 currency:currentContractParams.currency,
                 deployment:deploymentModethod,
                 signature: reqSignature,
-                txHash: '9d65bc7b87ec1ac33a931b0bc3c18a56c8391b9bba037851c58ea9d6ef1ee401', //tx.txHash,
+                txHash: tx.txHash,
                 contractType:"MoneyMaker",
                 icpAuthSignature:signForIcpAuth,
                 icpAuthString:hash,
             }
+            //tx.txHash, //'9d65bc7b87ec1ac33a931b0bc3c18a56c8391b9bba037851c58ea9d6ef1ee401','9d65bc7b87ec1ac33a931b0bc3c18a56c8391b9bba037851c58ea9d6ef1ee405',
         }
         else{
             //we create the housing contract from below function
@@ -757,12 +757,16 @@ export default function Home(){
         }
         setChats(tempChats)     
         resetContractMode() //function to reset the contract mode
+        setProcessing(false)
         Emitter.emit('callBalanceApi',null) //emitter for updating use balance
         }
         catch(error){
-            console.log("error",error,error.info.error.code)
+            setProcessing(false)
             if(error.info.error.code === 4001){
                 alert("User rejected the signature.")
+            }
+            else{
+                console.log("errror",)
             }
         }
     }

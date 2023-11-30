@@ -113,17 +113,20 @@ export default function MyContracts(props){
                                             <td></td>
                                             </>
                                             :
-                                            contractDetails.status === 'processingWithAboveStrikePrice'?
-                                            <>
-                                                <td><button className='btn btn-danger' onClick={()=>handleBuyBTC(contractDetails)}>Purchase BTC</button></td>
-                                                <td></td>
+                                                contractDetails.status === 'processingWithAboveStrikePrice'?
+                                                <>
+                                                    <td><button className='btn btn-danger' onClick={()=>handleBuyBTC(contractDetails)}>Purchase BTC</button></td>
+                                                    <td></td>
 
-                                            </>
-                                            :
-                                            <>
-                                            <td>Expired*</td>
-                                            <td></td>
-                                            </>
+                                                </>
+                                                :
+                                                contractDetails.status !== 'inprocess' ?
+                                                    <>
+                                                    <td>Expired*</td>
+                                                    <td></td>
+                                                    </>
+                                                    :
+                                                    null
 
                                         }
                                         
