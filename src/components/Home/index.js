@@ -107,7 +107,6 @@ export default function Home(){
             setBalance(data.latestBalance)
         })
         Emitter.on('setAccountSection',(data)=>{
-            console.log("log30",data)
             setAccountSectionMode(data.status)
         })
     },[loading])
@@ -130,11 +129,8 @@ export default function Home(){
                 if(chats[chats.length-1].text.includes('strike price') && chats[chats.length-1].text.includes('USD')){
                     inputText = 'Strike Price: $'+inputText 
                 }
-                // console.log("log",verifyLockBalanceMode)
                 if((chats[chats.length-1].text.includes('quantity') && chats[chats.length-1].text.includes('token')) || verifyLockBalanceMode){                   
-                    console.log("finalQuantity0",inputText,process.env.REACT_APP_PLATFORM_FEES)
                      let finalQuantity =  (new BigNumber(inputText).plus(new BigNumber(process.env.REACT_APP_PLATFORM_FEES))).toNumber()
-                     console.log("finalQuantity",finalQuantity)  
                     if(finalQuantity> userBalance){
                         handleExtPoolTxValidation(inputText)
                         tempChats =[ ...tempChats,{text:'Your wallet has lower balance than the entered amount,please go to Account Settings and top-up your wallet with WBTC tokens.',role:'assistant',property:'' }]
@@ -155,10 +151,8 @@ export default function Home(){
                     inputText = 'number of call option contract: '+inputText 
                 }
             }
-            console.log("log23",inputText)
             let {remianingDetails,updatedDetails} = await filterResponse(inputText,currentContractParams)
             setcurrentContractParams(updatedDetails)
-            console.log("remianingDetails",remianingDetails,"updatedDetails",updatedDetails)
             // console.log("log21", isPricePlotIsrequested,updatedDetails.wouldYouLikeToSeePricePredictionBasedOnHistoricalDailyPricesUsingTimeSeriesModelAlsoKeepInMindThisinformationShouldNotBeConsideredAsFinancialAdvice)
             if(isPricePlotIsrequested && (updatedDetails.wouldYouLikeToSeePricePredictionBasedOnHistoricalDailyPricesUsingTimeSeriesModelAlsoKeepInMindThisinformationShouldNotBeConsideredAsFinancialAdvice=== "yes" || updatedDetails.wouldYouLikeToSeePricePredictionBasedOnHistoricalDailyPricesUsingTimeSeriesModelAlsoKeepInMindThisinformationShouldNotBeConsideredAsFinancialAdvice=== "required")){
                 let plotUrl= await handlePricePrediction()
@@ -169,7 +163,6 @@ export default function Home(){
                 setLoading(true)
                 let requestedChat = await askForReqFields(remianingDetails[0])
                 setLoading(false)
-                console.log("log22",requestedChat)
                 setChats(()=>[...tempChats,{text:requestedChat.text,role:'assistant',property:'' }])    
             }
             else{
@@ -192,7 +185,6 @@ export default function Home(){
             setLoading(true)
             //initialized tagging chain
             if(chats.length){
-                console.log("log19",chats)
                 if(chats[chats.length-1].text.includes('name') && (chats[chats.length-1].text.includes('selling')||chats[chats.length-1].text.includes('seller'))){
                     inputText =  'Seller' + inputText 
                 }
@@ -209,10 +201,8 @@ export default function Home(){
                     inputText = 'wouldYouLikeToSeePricePredictionBasedOnHistoricalDailyPricesUsingTimeSeriesModelAlsoKeepInMindThisinformationShouldNotBeConsideredAsFinancialAdvice: '+inputText 
                 }
             }
-            console.log("log23",inputText)
             let {remianingDetails,updatedDetails} = await filterHousingContractFormResponse(inputText,housingContractParams)
             setHousingContractParams(updatedDetails)
-            console.log("remianingDetails",remianingDetails,"updatedDetails",updatedDetails)
 
             if(remianingDetails.length){
                 setLoading(true)
@@ -317,7 +307,6 @@ export default function Home(){
             let result
             if(usermessage){
                 matching_result = await vectorStore.similaritySearch(`Predict the next conversation from Bot when human question is given.Consider compilance ,risk and protection are taken under consideration.  Human:${matching_result}`,1)
-                console.log("log11",matching_result)
                 result = await handleInitChat(usermessage,matching_result)
                 tempChats=[...chats,{text:userInput,role:'user',property:''},{text:result.response,role:'assistant',property:'' }]
 
@@ -325,7 +314,6 @@ export default function Home(){
             else{
                 matching_result = await vectorStore.similaritySearch(`Predict the next conversation from Bot when human question is given.Consider compilance ,risk and protection are taken under consideration.Greet the user in friendly manner. Do not mention that assistance is a moneymaker bot or any bot.  Human:Hi`,1)
                 result = await handleInitChat("Hi",matching_result)
-                console.log("log11",matching_result,result)
                 tempChats=[...chats,{text:result.response,role:'assistant',property:'' }]
             }
             setChats(tempChats)
@@ -359,7 +347,6 @@ export default function Home(){
               "hnsw:space": "cosine",
             }, // Optional, can be used to specify the distance method of the embedding space https://docs.trychroma.com/usage-guide#changing-the-distance-function
          });
-         console.log()
 
     }
 
@@ -428,15 +415,12 @@ export default function Home(){
     const handleUserInput = async(e)=>{
         //  setChats(()=>[...chats,{text:userInput,role:'user'} ] )
         e.preventDefault()
-        console.log("debug1",messageCount,moneymakerMode,housingContractMode)
         setLoading(true)
         inputRef.current.value=''
         let tempChats = [...chats,{text:userInput,role:'user',property:''}]        
         setChats(tempChats)
         setmessageCount(messageCount+1)
-          console.log("log",promptManageMode,moneymakerMode)  
          if(promptManageMode){
-                console.log("log14",isPricePlotIsrequested)
                 if(moneymakerMode){
                     handleContractFormConversation(userInput,tempChats)
                 }
@@ -513,7 +497,6 @@ export default function Home(){
             
             let result = await reqChain.call({'titleOfContract':`${housingContractParams.titleOfContract}` ,'sellerName':`${housingContractParams.sellerName}`,'buyerName':`${housingContractParams.buyerName}`,'propertyAddress':`${housingContractParams.propertyAddress}`,'sellingPriceOrRentPrice':`${housingContractParams.sellingPriceOrRentPrice}`,'closingDate':`${housingContractParams.closingDate}`,'governingLaw':`${housingContractParams.governingLaw}`,'termsForContract':`${housingContractParams.termsForContract}`})
             let tempHousingContract = JSON.parse(result.text)
-            console.log("housingContractRes",tempHousingContract)
             return tempHousingContract.contract
         }
         catch(error){
@@ -564,7 +547,6 @@ export default function Home(){
        let result = await chain.call({'predictionMonths':`${currentContractParams.periodInMonth}`,'todayDate':formatDateToDdMmYy(),'predictionPrice':`${currentContractParams.strikePriceInUsd}`,'contractCounts':`${currentContractParams.noOfContracts}`,'userBalance':`${currentContractParams.tokenQuantity}`})
     //    console.log("result",result)
        let finalResult = JSON.parse(result.text)
-       console.log(JSON.parse(result.text))
        formatResponseUsingOptions(finalResult.contracts,promtInputs)
        setLoading(false)
     // console.log("result",result)
@@ -666,7 +648,6 @@ export default function Home(){
     let handleAssetTransfer = async(deploymentModethod) =>{
         alert("Platform fees of 0.0002BTC will be additionally charged from the wallet.We are transferring the funds to the pool wallet this may take some time.Thanks")
         let txData = await handleAssetQuantityTransfer(currentContractParams.tokenQuantity,deploymentModethod)   
-        console.log("debug21",txData)            
         
         if(txData.status === "failed"){
             handleExtPoolTxValidation(currentContractParams.tokenQuantity,txData.poolAddress)
@@ -697,7 +678,6 @@ export default function Home(){
         setSignature(reqSignature)
 
         let tx = await handleAssetTransfer(deploymentModethod)
-        console.log("finalLog",tx)
         let payload
         if(!housingContractMode){
              payload = {
@@ -797,13 +777,10 @@ export default function Home(){
             txHash:offTxForm.userTxHash,
            }
 
-           console.log("debug22",payload)
-
            let response = await Api.post('/moneyMaker/confirmUserTx', {
             userWalletAddress:account,
             txHash:offTxForm.userTxHash,
            })
-           console.log("debug20",response)
            setPoolTxHash(offTxForm.userTxHash)
            setVerifyLockBalanceMode(false)
            

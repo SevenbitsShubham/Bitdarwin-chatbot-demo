@@ -20,7 +20,6 @@ export default function AccountSection(props){
         try{
             setLoading(true)
             let response = await Api.get('/moneyMaker/getUserPoolAddress') 
-            console.log("log",response.data.poolAddress)
             setPoolWalletAddres(response.data.poolAddress)
             setLoading(false)
         }
@@ -44,9 +43,7 @@ export default function AccountSection(props){
              txHash:offTxForm.userTxHash,
             }
  
-         //    console.log("checker")
             let response = await Api.post('/moneyMaker/validateOffPortalLockTx',payload)
-            console.log("debug20",response)
             setProcessing(false)
             alert("Your transaction is validated successfully.")
             Emitter.emit('callBalanceApi',null)

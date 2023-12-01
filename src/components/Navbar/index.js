@@ -26,7 +26,6 @@ export default function NavbarComponent(){
 
     useEffect(()=>{
         const currentRoute = window.location.pathname;
-        console.log("currentRouter",currentRoute)
         if(!active){
             setShowModal(true)
         }
@@ -58,7 +57,6 @@ export default function NavbarComponent(){
 
     const getUsdcBalance = async(reqLibrary)=>{
         try{
-        // console.log("debug8",library)    
         let provider = new ethers.BrowserProvider(library._provider)
         let contractInstance = new ethers.Contract(usdcAddress,usdcAbi,provider)
         let reqBalance = await contractInstance.balanceOf(account.toString())
@@ -74,9 +72,7 @@ export default function NavbarComponent(){
             let payload = {
                 walletAddress: account
             }
-            console.log("payload",payload)
         let balance = await Api.post('/moneyMaker/walletBalance',payload)
-        console.log("balance",balance.data)
         setUserBalance(balance.data.walletBalance)
         //event emitter to update balance in the Home component
         Emitter.emit('updateUserBalance',{latestBalance:balance.data.walletBalance})

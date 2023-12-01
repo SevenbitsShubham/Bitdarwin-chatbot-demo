@@ -8,9 +8,8 @@ export default function BuyLockedBTCModal(props){
 
 
     useEffect(()=>{
-        console.log("ltx",props.viewContractDetails?.quantity,props.viewContractDetails.strikePrice)
+        // console.log("ltx",props.viewContractDetails?.quantity,props.viewContractDetails.strikePrice)
         let reqBuyAmountInUSDC = (new BigNumber(props.viewContractDetails?.quantity).multipliedBy(new BigNumber(props.viewContractDetails.strikePrice))).toNumber().toPrecision(2)
-        console.log("asdt",reqBuyAmountInUSDC)
         props.setBuyAmount(reqBuyAmountInUSDC)
     },[props.viewContractDetails])
 

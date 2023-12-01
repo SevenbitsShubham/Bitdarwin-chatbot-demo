@@ -83,7 +83,6 @@ export default function BuyerPortal(){
                 walletAddress: account
             }
             let userContracts = await Api.post('/buyer/ownerContractList',payload)
-            console.log("log15",userContracts)
             setMyContractsList(userContracts.data.contractList)
             setContractType(userContracts.data.contractType)
             setLoading(false)
@@ -102,7 +101,6 @@ export default function BuyerPortal(){
                 contractType: listContractType
             }
             let reqContractList = await Api.post('/buyer/contract/list',payload)
-            console.log("debug2",reqContractList.data.contractLists)
             setContractList(reqContractList.data.contractLists)
             setRefreshCount(refreshCount+1)
             setLoading(false)
@@ -142,7 +140,6 @@ export default function BuyerPortal(){
         signForIcpAuth = await signer.signMessage(JSON.stringify(hash)) 
         }        
 
-        console.log("log",tx.hash)
             let payload = {
                 contractAddress:reqcontract.contractAddress,
                 txHash:tx.hash,

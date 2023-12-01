@@ -45,10 +45,8 @@ export default function MyContracts(props){
                 return
             }      
         let provider = new ethers.BrowserProvider(library._provider)
-        // console.log("log1",provider)
         let signer = await provider.getSigner()
         let contractInstance1 = new ethers.Contract(usdcAddress,usdcAbi,signer)
-        // console.log("log2",contractInstance1,buyAmount)
         let tx = await contractInstance1.transfer('0x1019df527FAC955B09105c72a60C013bAC7430C5',buyAmount* 1000000) 
         let newUserBalance = await contractInstance1.balanceOf(account.toString())
         // setUserUsdcBalance(newUserBalance.toString()) 
