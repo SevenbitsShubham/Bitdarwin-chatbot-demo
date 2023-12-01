@@ -696,8 +696,8 @@ export default function Home(){
         }        
         setSignature(reqSignature)
 
-        let tx = await handleAssetTransfer(deploymentModethod)
-        console.log("finalLog",tx)
+        // let tx = await handleAssetTransfer(deploymentModethod)
+        // console.log("finalLog",tx)
         let payload
         if(!housingContractMode){
              payload = {
@@ -712,12 +712,12 @@ export default function Home(){
                 currency:currentContractParams.currency,
                 deployment:deploymentModethod,
                 signature: reqSignature,
-                txHash: tx.txHash,
+                txHash: '9d65bc7b87ec1ac33a931b0bc3c18a56c8391b9bba037851c58ea9d6ef1ee405',
                 contractType:"MoneyMaker",
                 icpAuthSignature:signForIcpAuth,
                 icpAuthString:hash,
             }
-            //tx.txHash, //'9d65bc7b87ec1ac33a931b0bc3c18a56c8391b9bba037851c58ea9d6ef1ee401','9d65bc7b87ec1ac33a931b0bc3c18a56c8391b9bba037851c58ea9d6ef1ee405',
+            //tx.txHash, //'9d65bc7b87ec1ac33a931b0bc3c18a56c8391b9bba037851c58ea9d6ef1ee401','9d65bc7b87ec1ac33a931b0bc3c18a56c8391b9bba037851c58ea9d6ef1ee405' ,
         }
         else{
             //we create the housing contract from below function
