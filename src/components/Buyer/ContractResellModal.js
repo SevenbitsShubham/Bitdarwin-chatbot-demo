@@ -13,6 +13,7 @@ export default function ContractResellModal(props){
 
     },[])
 
+    //function is used to handle /buyer/resellContract api 
     const handleResellApi = async() =>{
         try{
             let payload = {

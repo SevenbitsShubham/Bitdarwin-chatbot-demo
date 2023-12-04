@@ -60,6 +60,7 @@ export default function BuyerPortal(){
 
     },[])
 
+    //function is used to initialize contract instance for USDC
     const initUsdcContract = async() =>{
         try{
             let provider = new ethers.BrowserProvider(library._provider)
@@ -74,6 +75,7 @@ export default function BuyerPortal(){
         }
     }
 
+    //function is used to get list of contracts owned by user
     const getUserContracts = async() =>{
         try{
             setLoading(true)
@@ -93,6 +95,7 @@ export default function BuyerPortal(){
         }
     }
 
+    //function is used to get list of contracts available to buy
     const getContractList = async() =>{
         try{  
             setLoading(true)  
@@ -111,11 +114,13 @@ export default function BuyerPortal(){
         }
     }
 
+    //function is used setup the modal for contract buy
     const setupModal = (contractAddress) =>{
         setModalShow(true)
         setreqcontract(contractAddress)
     }
 
+    //function is used to transact USDC contract for buying the contract and also hits the api to validate the transaction
     const handleTransaction = async() =>{
         try{
             setProcessing(true)
@@ -163,6 +168,7 @@ export default function BuyerPortal(){
         }
     }
 
+    //function is used to handle view contract modal
     const handleViewContractDetails = (reqContractDetails) =>{
         setViewDetailsModalShow(true)
         setViewContractDetails(reqContractDetails)

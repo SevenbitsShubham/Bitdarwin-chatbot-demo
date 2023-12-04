@@ -50,11 +50,13 @@ export default function NavbarComponent(){
         })
     },[usdcBalance])
 
+    //function is used to call functions which hit initial api's for userRegistration and balance fetching 
     const  handleWalletApi= async() =>{
                 await handleUserRegistration(account)
                 await getmoneymakerBalance()
     }
 
+    //function is used to fetch usdc wallet from metamask wallet 
     const getUsdcBalance = async(reqLibrary)=>{
         try{
         let provider = new ethers.BrowserProvider(library._provider)
@@ -67,6 +69,7 @@ export default function NavbarComponent(){
         }
     }
 
+    //function is used to fetch BTC user balance from the backend 
     const getmoneymakerBalance = async() =>{
         try{
             let payload = {
@@ -82,6 +85,7 @@ export default function NavbarComponent(){
         }
     }
 
+    //function is used to toggle between account section and chat section
     const handleAccountSection = (status) =>{
         setAccountSectionMode(status) 
         getmoneymakerBalance()

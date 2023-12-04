@@ -117,6 +117,7 @@ export default function Home(){
         }
     },[active,initPhase])
 
+    //below function handles user input and asks call-option contract related qustions based on input
     const handleContractFormConversation = async(inputText='No data available.',tempChats=[...chats]) =>{
         try{
             setLoading(true)
@@ -151,6 +152,7 @@ export default function Home(){
                     inputText = 'number of call option contract: '+inputText 
                 }
             }
+            //below function call returns remaining details for thr contract creation and updated details for the contract
             let {remianingDetails,updatedDetails} = await filterResponse(inputText,currentContractParams)
             setcurrentContractParams(updatedDetails)
             // console.log("log21", isPricePlotIsrequested,updatedDetails.wouldYouLikeToSeePricePredictionBasedOnHistoricalDailyPricesUsingTimeSeriesModelAlsoKeepInMindThisinformationShouldNotBeConsideredAsFinancialAdvice)
@@ -169,7 +171,6 @@ export default function Home(){
                 setIsPricePlotIsrequested(false)
                 setPromptManageMode(false)
                 setContractMode(true)
-                // tempChats= [...tempChats,{text:inputText,role:'user',property:'',params:null }]
                 handleOptionGeneration(tempChats)    
             }
             
@@ -180,6 +181,7 @@ export default function Home(){
         }
     }
 
+    //below function handles user input and asks housing contract related qustions based on input
     const handleHousingContractFormConversation = async(inputText='No data available.',tempChats=[...chats]) =>{
         try{
             setLoading(true)
@@ -225,6 +227,7 @@ export default function Home(){
         }
     }
 
+    //this function is used to create payload and hit /moneyMaker/lockAssets api which is used to lock user BTC to user pool wallet
     const handleAssetQuantityTransfer = async(quantity,deploymentModethod) =>{
         try{
             // setProcessing(true)
@@ -266,6 +269,7 @@ export default function Home(){
         }
     }
 
+    //this function is used to handle initial conversation as well handles other conversation apart from contract creation
     const initBot = async(usermessage) =>{
         try{
             setLoading(true)
@@ -336,6 +340,7 @@ export default function Home(){
         
     }
 
+    //this function is used to add sql queries to chromaDb
     const manageVectorSTorage = async (queries) =>{
         vectorStore = await Chroma.fromDocuments( 
             queries,
@@ -368,13 +373,12 @@ export default function Home(){
 
     //initializing llm instance
     const llm = new OpenAI({
-        // organization: "org-cRDHZiDZZml2OhFTMeIqHr6c",
-        // apiKey: ,
         temperature: 0,
         modelName: "gpt-3.5-turbo",
         openAIApiKey:process.env.REACT_APP_OPENAI_API_KEY
     });  
 
+    //this api is used to get plot url of the time series analysis
     const handlePricePrediction = async() =>{
         try{
         setLoading(true)    
@@ -390,6 +394,7 @@ export default function Home(){
         }    
     } 
 
+    //this function is helper function for initBot() for adding propmpt and getting result from the conversationChain
     const handleInitChat = async(input,matching_result) =>{
         try{
             // let template = "You are a Crypto moneymaker contract creator bot and your name is AInstein, greet the user in a friendly manner.  Human:Hii  AI bot:Hello! Welcome to Money Maker Bot. I'm here to help you create your contract. Please provide valid answers to the questions below.  Human:yes,I want to create the contract. AI bot:Please provide valid answers to below questions. Human:{input} AI Bot:"   
@@ -409,9 +414,11 @@ export default function Home(){
         }
         catch(error){
 
+
         }
     }
 
+    //this function is used to handle user input and here we can call the required functions like init() ,handleContractFormConversation() and handleHousingContractFormConversation() for handling the requests
     const handleUserInput = async(e)=>{
         //  setChats(()=>[...chats,{text:userInput,role:'user'} ] )
         e.preventDefault()
@@ -474,6 +481,7 @@ export default function Home(){
          setLoading(false)
     }
 
+    //function is used to generate a housing contract based on contract parameters
     const handleHousingContractGeneration = async()=>{
         try{
 
@@ -504,7 +512,7 @@ export default function Home(){
         }
     }
 
-
+    //function is used to create call options based on user inputs
     const handleOptionGeneration = async(promtInputs) =>{
        try{
         setLoading(true)
@@ -557,6 +565,7 @@ export default function Home(){
        }
     }
 
+    //function is used to append call option in the user chat
     const formatResponseUsingOptions = (results,promtInputs) =>{
 
         let tempChats = promtInputs
@@ -566,6 +575,7 @@ export default function Home(){
         setChats(tempChats)
     }
 
+    //function is used to create sql query for call option contract
     const handleGenerateSqlqueryForMoneyMaker = async(strikePrice,premium,openInterest,expirationDate) =>{
         try{
             setLoading(true)
@@ -607,6 +617,7 @@ export default function Home(){
         }
     }
 
+    //function is used to create sql query for housing contract
     const handleGenerateSqlqueryHousingContract = async(title,buyer,seller,governingLaw,propertyAddress,sellingPrice,terms,expirationDate,tempChats) =>{
         try{
             setLoading(true)
@@ -645,19 +656,19 @@ export default function Home(){
         }
     }
 
-    let handleAssetTransfer = async(deploymentModethod) =>{
-        alert("Platform fees of 0.0002BTC will be additionally charged from the wallet.We are transferring the funds to the pool wallet this may take some time.Thanks")
-        let txData = await handleAssetQuantityTransfer(currentContractParams.tokenQuantity,deploymentModethod)   
+    // let handleAssetTransfer = async(deploymentModethod) =>{
+    //     alert("Platform fees of 0.0002BTC will be additionally charged from the wallet.We are transferring the funds to the pool wallet this may take some time.Thanks")
+    //     let txData = await handleAssetQuantityTransfer(currentContractParams.tokenQuantity,deploymentModethod)   
         
-        if(txData.status === "failed"){
-            handleExtPoolTxValidation(currentContractParams.tokenQuantity,txData.poolAddress)
+    //     if(txData.status === "failed"){
+    //         handleExtPoolTxValidation(currentContractParams.tokenQuantity,txData.poolAddress)
 
-            setTempQuantity(currentContractParams.tokenQuantity)
-            return
-        }   
-        setVerifyLockBalanceMode(false)
-        return txData
-    }
+    //         setTempQuantity(currentContractParams.tokenQuantity)
+    //         return
+    //     }   
+    //     setVerifyLockBalanceMode(false)
+    //     return txData
+    // }
 
     // function handles user signature and /moneyMaker/createContract api integration
     const handleCreateContract = async(query,deploymentModethod) =>{
@@ -752,6 +763,7 @@ export default function Home(){
         }
     }
 
+    //function is used to reset the chat modes after successful contract creation or cancelling the contract creation process
     const resetContractMode = () =>{
         setPoolTxHash(null)
         setHousingContractMode(false)
@@ -765,47 +777,7 @@ export default function Home(){
         setSqlQuery('')
     }
 
-    const handleTxForm = async(e) =>{
-       try{ 
-        e.preventDefault()
-        setProcessing(true)
-           if(!offTxForm.userTxHash){
-               return alert("Please enter transaction hash.")
-           }
-
-           let payload = {
-            userWalletAddress:account,
-            txHash:offTxForm.userTxHash,
-           }
-
-           let response = await Api.post('/moneyMaker/confirmUserTx', {
-            userWalletAddress:account,
-            txHash:offTxForm.userTxHash,
-           })
-           setPoolTxHash(offTxForm.userTxHash)
-           setVerifyLockBalanceMode(false)
-           
-           alert("Your transaction is validated successfully.Currently we are despositing the platform fee 0.0002 BTC.Please Wait till transaction is processing.")
-           await Api.post('/moneyMaker/transferFees', {
-            userWalletAddress:account,
-           })   
-           alert("0.0002 BTC fee is successfully deducted from your wallet as a platform fee.")
-           setProcessing(false)         
-           handleContractFormConversation(`quantity: ${tempQuantity}`)
-
-       }
-       catch(error){
-         console.log("error",error,account)
-         if(error.response.data){
-            if(error.response.data.includes('validate the tx')){
-                  setChats(()=>[...chats,{text:'Please first validate the transaction from Account Settings.And Try Again ',role:'assistant',property:''}])  
-            }    
-         }
-             setProcessing(false)
-        //  alert(error.message)
-       } 
-    }
-
+    //function is used to hit /moneyMaker/transferFees api to transfer fees while creating housing contract
     const handleFeetransfer = async(updatedDetails,tempChats,e=null) =>{
         try{
             setLoading(true)

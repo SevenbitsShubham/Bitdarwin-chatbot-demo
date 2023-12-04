@@ -1,6 +1,6 @@
 import Api from './Api';
 
-
+//function is used to format date in yy-mm-dd
 export function formatDateToDdMmYy() {
     const today = new Date();
     const day = String(today.getDate()).padStart(2, '0'); // Get day and pad with leading zero if needed
@@ -20,6 +20,7 @@ export const handleUserRegistration = async(walletAddress) =>{
     }
 }
 
+//function is used to generatevrandom string
 export const generateRandomString = async() =>{
     var arr = new Uint8Array(30 / 2)
     window.crypto.getRandomValues(arr)

@@ -18,22 +18,25 @@ export default function MyContracts(props){
 
     const {account,library} = useWeb3React()
 
-
+    //function is used to handle contract detail modal
     const handleViewContractDetails = (reqContractDetails) =>{
         setViewDetailsModalShow(true)
         setViewContractDetails(reqContractDetails)
     }
 
+    //function is used to handle resell modal
     const handleResell = (reqContractDetails) =>{
         setResellModal(true)   
         setViewContractDetails(reqContractDetails)
     }
 
+    //function is used to handle buy contract BTC modal
     const handleBuyBTC = async(contractDetails) =>{
         setLockedBTCMode(true)
         setViewContractDetails(contractDetails)
     }
 
+    //function is used to hit /buyer/buyLockedBTC api to purchase locked btc in expired contract
     const handleBuyLockedBTC = async(e) =>{
         try{
             e.preventDefault()
@@ -47,7 +50,7 @@ export default function MyContracts(props){
         let provider = new ethers.BrowserProvider(library._provider)
         let signer = await provider.getSigner()
         let contractInstance1 = new ethers.Contract(usdcAddress,usdcAbi,signer)
-        let tx = await contractInstance1.transfer('0x1019df527FAC955B09105c72a60C013bAC7430C5',buyAmount* 1000000) 
+        let tx = await contractInstance1.transfer('${process.env.REACT_APP_SYSTEM_WALLET}',buyAmount* 1000000) 
         let newUserBalance = await contractInstance1.balanceOf(account.toString())
         // setUserUsdcBalance(newUserBalance.toString()) 
         alert(`Transaction Hash:${tx.hash},further vaidation process will take some time.`)

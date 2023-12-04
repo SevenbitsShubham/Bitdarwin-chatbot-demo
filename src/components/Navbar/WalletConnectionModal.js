@@ -14,6 +14,7 @@ export default function WalletConnectionModal(props){
 
     },[])
 
+    //function is used to connect the metamask wallet 
     const handleWalletConnection = async() =>{
         try{
             await activate(injected)

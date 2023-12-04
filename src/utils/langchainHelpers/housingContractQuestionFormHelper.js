@@ -41,6 +41,7 @@ let chat = await gatheringChain.call({ask_for})
 return chat    
 }
 
+//function assign input value to required field using tagging chain and we get updated and remaining details object
 export async function filterHousingContractFormResponse(textInput,currentDetails){
     // console.log("log19.5",textInput,textInput.length,currentDetails)
     let chain = createTaggingChain(schema,chatModel)

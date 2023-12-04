@@ -16,6 +16,7 @@ export default function AccountSection(props){
         getPoolWalletAddress()
     },[])
     
+    //function is used hit /moneyMaker/getUserPoolAddress api to get pool wallet address
     const getPoolWalletAddress = async() =>{
         try{
             setLoading(true)
@@ -29,6 +30,7 @@ export default function AccountSection(props){
         }
     }
 
+    //function is used to hit /moneyMaker/validateOffPortalLockTx api for transaction validation
     const handleTxForm = async(e) =>{
         try{ 
          e.preventDefault()
